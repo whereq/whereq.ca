@@ -8,12 +8,12 @@ A comprehensive technical map of `/home/whereq/git/whereq.ca/src/features/multim
 
 | File | Lines | Role |
 |---|---|---|
-| `models/MultimediaEnum.ts` | 10 | Section enum (8 values) that drives sidebar + routing |
+| `models/MultimediaEnum.ts` | 11 | Section enum (9 values) that drives sidebar + routing |
 | `store/multimediaStore.ts` | 20 | Zustand store: `activeSection` + `isWorkspaceVisible` toggle |
 | `pages/MultimediaPage.tsx` | 16 | Page shell: `<PageLayout>` + `<Sidebar>` + `<Workspace>` |
 | `hooks/useFfmpegEngine.ts` | 212 | Module-singleton FFmpeg.wasm engine + React mirror hook |
-| `components/Sidebar.tsx` | 60 | Vertical icon rail; `TOOLS` array drives icons + active state |
-| `components/Workspace.tsx` | 34 | Pure switch on `activeSection` → renders one tool |
+| `components/Sidebar.tsx` | 62 | Vertical icon rail; `TOOLS` array drives icons + active state |
+| `components/Workspace.tsx` | 36 | Pure switch on `activeSection` → renders one tool |
 | `components/BackgroundRemover.tsx` | 183 | `@imgly/background-removal` (ONNX/WebAssembly) |
 | `components/ImageFormatConverter.tsx` | 291 | Canvas-based image format convert (no deps) |
 | `components/VideoToGif.tsx` | 454 | `<video>` seek + canvas + gif.js; original GIF tool |
@@ -21,6 +21,7 @@ A comprehensive technical map of `/home/whereq/git/whereq.ca/src/features/multim
 | `components/VideoSplitter.tsx` | 1061 | FFmpeg.wasm stream-copy cut + custom timeline + thumbnails |
 | `components/AudioVideoMerger.tsx` | 984 | FFmpeg.wasm merge with 4 length-mismatch policies |
 | `components/GifMaker.tsx` | 1536 | 3-stage pipeline: Prepare (FFmpeg concat) → Convert (gif.js) → Compress (gifuct-js + gif.js) |
+| `components/ImageToPdf.tsx` | 813 | Browser-native image list → PDF via pdf-lib (max 9 images) |
 | `components/YouTubeCapture.tsx` | 738 | MediaRecorder + iframe capture (HIDDEN in sidebar, kept on disk) |
 
 **Library versions** (from package.json):
@@ -28,6 +29,7 @@ A comprehensive technical map of `/home/whereq/git/whereq.ca/src/features/multim
 - `gif.js ^0.2.0` (no TS types — `// @ts-expect-error` everywhere)
 - `gifuct-js ^2.1.2` (no first-class types — cast through `unknown`)
 - `@imgly/background-removal 1.5.8` (uses ONNX Runtime Web internally)
+- `pdf-lib ^1.17.1` (pure-JS PDF writer; no wasm, no server round-trip)
 - `zustand ^5.0.12` (store)
 - `react-modal` (used by `CustomModal`)
 
@@ -40,7 +42,7 @@ A comprehensive technical map of `/home/whereq/git/whereq.ca/src/features/multim
 ## 1. Component Inventory
 
 ### 1.1 `MultimediaEnum.ts` (10 lines)
-Single TypeScript enum `SectionType` with 8 string values:
+Single TypeScript enum `SectionType` with 9 string values:
 - `YOUTUBE_CAPTURE` (kept in enum + store but HIDDEN in `Sidebar` and NEVER routed in `Workspace`; see §1.2)
 - `BACKGROUND_REMOVER` (default landing)
 - `IMAGE_FORMAT_CONVERTER`
@@ -48,7 +50,8 @@ Single TypeScript enum `SectionType` with 8 string values:
 - `GIF_COMPRESSOR`
 - `VIDEO_SPLITTER`
 - `AUDIO_VIDEO_MERGER`
-- `GIF_MAKER` (newest; wizard icon `faWandMagicSparkles`)
+- `GIF_MAKER` (wizard icon `faWandMagicSparkles`)
+- `IMAGE_TO_PDF` (newest; icon `faFilePdf`)
 
 The enum values are **the human labels**, not machine IDs. Both Sidebar and Workspace use `SectionType.X` strings directly.
 
@@ -326,6 +329,47 @@ type Segment =
 
 ---
 
+### 1.15 `ImageToPdf.tsx` (813 lines)
+
+**What it does**: Take a list of up to **9** images and write them into a PDF, entirely in the browser. Uses `pdf-lib` (pure-JS PDF writer) — no server, no wasm, no print dialog.
+
+**State**:
+- `images: PdfImageItem[]` — `{ id, file, url, name, size, width, height }`, `url` is the object URL used for the thumbnail
+- Options: `pageSize: "a4" | "letter" | "fit"`, `orientation: "portrait" | "landscape"`, `layout: "one" | "grid2x2" | "grid3x3"`, `cellMode: "contain" | "cover"`, `margin: 0–72` pt
+- Process: `status: "idle" | "building" | "done" | "error"`, `error`, `notice`
+- Output: `pdfUrl`, `pdfSize`, `pageCount`
+- Modal: `showReplaceWarning`
+- Refs: `inputRef`, `pendingActionRef`, `imagesRef`, `reservedRef`, `pdfUrlRef`
+
+**Callbacks**:
+- `addImages(fileList)` — filters to `image/*`, enforces the 9-image cap, decodes each file into an item (`readImageItem` → object URL + `naturalWidth/Height`).
+- `removeImage(id)`, `moveImage(index, ±1)`, `clearAll()` — all mutate the list through `commitImages`.
+- `buildPdf()` — the pipeline (below).
+- `handleDownload()` — dispatches a hidden `<a download>` click.
+
+**The PDF pipeline**:
+1. `PDFDocument.create()` → set title/producer/creator.
+2. Chunk the images by `LAYOUTS[layout].perPage` (1 / 4 / 9).
+3. Per page: `doc.addPage([w, h])`, then per image either
+   - **one-per-page**: embed and scale to fit the content box (`Math.min(contentW/w, contentH/h)`), centred;
+   - **grid**: compute the cell rect from `cols`/`rows` + an 8pt gutter, then either *contain* (scale + centre) or *cover* (centre-crop in pixels first, then fill the cell exactly).
+4. `doc.save()` → `Blob` → object URL.
+
+**Embedding rules**: PNG and JPEG are embedded losslessly straight from the file bytes (`embedPng` / `embedJpg`). Every other browser-readable format (WebP, GIF, BMP, AVIF…) is re-encoded to PNG through a canvas first, because pdf-lib only speaks PNG/JPEG.
+
+**External libs**: `pdf-lib` + `CustomModal`. No FFmpeg, no canvas in the output path.
+
+**Non-obvious details**:
+- **The 9-image cap is enforced with a reservation, not just a state read.** `addImages` is async (it decodes each file), so a second pick fired before the first finished would read a stale `images.length` and could push the list past 9. `reservedRef` claims the slots synchronously before the decode loop and releases them in a `finally`, so the cap holds even under concurrent picks.
+- **`commitImages` is the single writer for the list.** It updates `imagesRef` synchronously and then calls `setImages`, so the cap check never reads a stale count. The unmount cleanup revokes every object URL via `imagesRef`.
+- **"Fit to image" page size** sizes the page to the first image's pixel dimensions (1px = 1pt, capped at 1440pt) and ignores the margin — the page *is* the image. It is disabled for the grid layouts, where a per-page size makes no sense.
+- **"Fill cell" needs a pixel-level crop** because PDF has no clipping primitive: `cropToPngBytes` centre-crops the source in a canvas to the cell's aspect ratio, then the cropped PNG is embedded and drawn edge-to-edge.
+- **The replace-warning modal covers every mutation, not just uploads.** Adding, removing, and reordering all invalidate a finished PDF, so all of them route through `requestChange`, which shows the 3-button `<CustomModal type="warning">` (Cancel / Discard & continue / Download previous) when a PDF is still on screen. The pending action is stashed in `pendingActionRef`.
+- **The file input value is reset after each pick** so choosing the same file twice still fires a change event. The `File` objects are captured before the reset, so nothing is lost.
+- Grid rows are laid out top-down: PDF's origin is bottom-left, so row 0 is anchored to `pageHeight - margin - cellH`.
+
+---
+
 ## 2. `useFfmpegEngine.ts` — Deep Dive (212 lines)
 
 ### 2.1 Module-level singleton state
@@ -564,11 +608,11 @@ Off-screen `<canvas>` + `drawImage` + `toBlob(mime, quality/100)`. The `flattenO
 ## 4. Routing & Sidebar Flow
 
 ### 4.1 Enum values
-`MultimediaEnum.ts` exports one enum (`SectionType`) with 8 string values (see §1.1). The string values are the human labels (used in `TOOLS[].label` in Sidebar).
+`MultimediaEnum.ts` exports one enum (`SectionType`) with 9 string values (see §1.1). The string values are the human labels (used in `TOOLS[].label` in Sidebar).
 
 ### 4.2 Sidebar
 - Renders a 16-wide vertical icon bar.
-- `TOOLS` array (7 entries, YouTube commented out) maps each `SectionType` to a FontAwesome icon + label.
+- `TOOLS` array (8 entries, YouTube commented out) maps each `SectionType` to a FontAwesome icon + label.
 - `handleClick(section)`:
   1. `setActiveSection(section)` — updates Zustand store.
   2. If `!isWorkspaceVisible`, `toggleWorkspace()` — opens the workspace.
