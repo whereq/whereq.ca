@@ -2007,6 +2007,7 @@ Useful flags:
 | `--squash <n>` | Squash only the last N commits. |
 | `--no-squash` | Push the dev commits as-is. |
 | `--no-notes` | Don't scaffold a release note. |
+| `--status <status>` | Status for the scaffolded note: `shipped` / `draft` / `yanked` (default: `draft`). |
 | `--skip-checks` | Skip the CI gates (deliberate hotfixes only). |
 | `-y, --yes` | Skip the confirmation prompt. |
 | `--dry-run` | Print everything, change nothing. |
