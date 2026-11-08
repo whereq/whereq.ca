@@ -37,6 +37,7 @@
     "mathjax-full": "^3.2.2",
     "mathjs": "^15.2.0",
     "onnxruntime-web": "1.21.0-dev.20250114-228dd16893",
+    "pdf-lib": "^1.17.1",
     "prismjs": "^1.30.0",
     "pyodide": "^0.29.3",
     "re-resizable": "^6.11.2",

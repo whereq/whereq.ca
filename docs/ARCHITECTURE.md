@@ -647,6 +647,7 @@ features/multimedia/
 │   ├── VideoSplitter.tsx                   ← stream-copy trim with custom timeline
 │   ├── AudioVideoMerger.tsx                ← H.264/AAC merge with 4 length policies
 │   ├── GifMaker.tsx                        ← 3-stage pipeline: Prepare → Convert → Compress
+│   ├── ImageToPdf.tsx                      ← images → PDF (pdf-lib, max 9 images)
 │   └── YouTubeCapture.tsx                  ← MediaRecorder + iframe (HIDDEN in sidebar)
 ```
 
@@ -1049,6 +1050,37 @@ its error path. This is a known inconsistency to fix.
 
 ---
 
+### 12.9 The `ImageToPdf` tool
+
+`src/features/multimedia/components/ImageToPdf.tsx` turns up to **9**
+uploaded images into a PDF, entirely in the browser, using `pdf-lib`
+(a pure-JS PDF writer — no wasm, no server, no print dialog).
+
+- **Layouts**: one image per page, a 2×2 grid, or a 3×3 grid (the
+  whole set on one page). Page size is A4, US Letter, or "fit to
+  image" (the page matches the first image's pixel dimensions, 1px =
+  1pt, capped at 1440pt; margins are ignored in that mode).
+- **Cell fill** (grid layouts only): "fit inside cell" letterboxes the
+  image, "fill cell" centre-crops it to the cell's aspect ratio and
+  covers it completely.
+- **Embedding**: PNG and JPEG are embedded losslessly straight from the
+  file bytes. Every other browser-readable format (WebP, GIF, BMP,
+  AVIF…) is re-encoded to PNG through a canvas first, because pdf-lib
+  only speaks PNG/JPEG. "Fill cell" also needs a pixel-level crop,
+  since PDF has no clipping primitive.
+- **The 9-image cap is enforced with a reservation**, not just a state
+  read: `addImages` decodes files asynchronously, so a second pick
+  fired before the first finished would read a stale count and could
+  push the list past the limit. `reservedRef` claims the slots
+  synchronously before the decode loop and releases them in a
+  `finally`.
+- **The replace-warning modal guards every mutation** of the image
+  list — add, remove, and reorder all invalidate a finished PDF, so
+  they all route through `requestChange`, which shows the standard
+  3-button warning modal when a PDF is still on screen.
+
+---
+
 ## 13. The other 14 features (one-paragraph maps)
 
 ### `academy/` — stub
@@ -1412,7 +1444,9 @@ with a typed `type: "info" | "success" | "warning" | "error"` and
 a structured `actions: CustomModalAction[]` API for 3+ button flows.
 The canonical use case is the 3-button "Cancel / Discard & continue /
 Download previous" modal used in VideoToGif, GifCompressor, GifMaker,
-and VideoSplitter.
+VideoSplitter, and ImageToPdf. In ImageToPdf it guards *every* mutation
+of the image list (add / remove / reorder), not just a re-upload,
+because each one invalidates a finished PDF.
 
 ### `eventEmitter` — the typed pub/sub
 
@@ -1426,6 +1460,18 @@ updates. The typing is `string`-based, not strongly-typed event names
 `src/utils/localStorageHelper.ts` is a thin wrapper around
 `localStorage.getItem` / `setItem` with JSON serialization and
 defensive parsing. Used everywhere for persistence.
+
+### `pdf-lib` — the browser-side PDF writer
+
+`pdf-lib` is a pure-JS PDF generator (no wasm, no server). Used by
+`src/features/multimedia/components/ImageToPdf.tsx` to turn uploaded
+images into a downloadable PDF. Two constraints worth remembering:
+
+- It embeds **PNG and JPEG only**. Any other browser-readable image
+  format (WebP, GIF, BMP, AVIF…) must be re-encoded to PNG through a
+  canvas first.
+- It has **no clipping primitive**. "Fill cell" layouts need a
+  centre-crop done in pixels before the image is embedded.
 
 ### `MathJaxRenderer` + `mathJaxSetup` — the LaTeX singleton
 

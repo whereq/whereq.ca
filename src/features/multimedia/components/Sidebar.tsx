@@ -8,6 +8,7 @@ import {
     faScissors,
     faCirclePlus,
     faWandMagicSparkles,
+    faFilePdf,
 } from "@fortawesome/free-solid-svg-icons";
 import { SectionType } from "@/features/multimedia/models/MultimediaEnum";
 import { useMultimediaStore } from "@/features/multimedia/store/multimediaStore";
@@ -22,6 +23,7 @@ const TOOLS: { section: SectionType; icon: typeof faVideo; label: string }[] = [
     // { section: SectionType.YOUTUBE_CAPTURE, icon: faVideo, label: "YouTube Capture" },
     { section: SectionType.BACKGROUND_REMOVER, icon: faImagePortrait, label: "Background Remover" },
     { section: SectionType.IMAGE_FORMAT_CONVERTER, icon: faRightLeft, label: "Image Format Converter" },
+    { section: SectionType.IMAGE_TO_PDF, icon: faFilePdf, label: "Image to PDF" },
     { section: SectionType.VIDEO_TO_GIF, icon: faFilm, label: "Video to GIF" },
     { section: SectionType.GIF_COMPRESSOR, icon: faCompress, label: "GIF Compressor" },
     { section: SectionType.VIDEO_SPLITTER, icon: faScissors, label: "Video Splitter" },
