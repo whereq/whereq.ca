@@ -1,0 +1,944 @@
+- atomicNumber: 1
+  symbol: H
+  name: Hydrogen
+  category: Nonmetal
+  atomicMass: 1.008
+  row: 1
+  group: 1
+  electronConfiguration: 1s¹
+- atomicNumber: 2
+  symbol: He
+  name: Helium
+  category: Noble Gas
+  atomicMass: 4.0026
+  row: 1
+  group: 18
+  electronConfiguration: 1s²
+- atomicNumber: 3
+  symbol: Li
+  name: Lithium
+  category: Alkali Metal
+  atomicMass: 6.941
+  row: 2
+  group: 1
+  electronConfiguration: "[He] 2s¹"
+- atomicNumber: 4
+  symbol: Be
+  name: Beryllium
+  category: Alkaline Earth Metal
+  atomicMass: 9.0122
+  row: 2
+  group: 2
+  electronConfiguration: "[He] 2s²"
+- atomicNumber: 5
+  symbol: B
+  name: Boron
+  category: Metalloid
+  atomicMass: 10.81
+  row: 2
+  group: 13
+  electronConfiguration: "[He] 2s² 2p¹"
+- atomicNumber: 6
+  symbol: C
+  name: Carbon
+  category: Nonmetal
+  atomicMass: 12.011
+  row: 2
+  group: 14
+  electronConfiguration: "[He] 2s² 2p²"
+- atomicNumber: 7
+  symbol: N
+  name: Nitrogen
+  category: Nonmetal
+  atomicMass: 14.007
+  row: 2
+  group: 15
+  electronConfiguration: "[He] 2s² 2p³"
+- atomicNumber: 8
+  symbol: O
+  name: Oxygen
+  category: Nonmetal
+  atomicMass: 15.999
+  row: 2
+  group: 16
+  electronConfiguration: "[He] 2s² 2p⁴"
+- atomicNumber: 9
+  symbol: F
+  name: Fluorine
+  category: Halogen
+  atomicMass: 18.998
+  row: 2
+  group: 17
+  electronConfiguration: "[He] 2s² 2p⁵"
+- atomicNumber: 10
+  symbol: Ne
+  name: Neon
+  category: Noble Gas
+  atomicMass: 20.18
+  row: 2
+  group: 18
+  electronConfiguration: "[He] 2s² 2p⁶"
+- atomicNumber: 11
+  symbol: Na
+  name: Sodium
+  category: Alkali Metal
+  atomicMass: 22.99
+  row: 3
+  group: 1
+  electronConfiguration: "[Ne] 3s¹"
+- atomicNumber: 12
+  symbol: Mg
+  name: Magnesium
+  category: Alkaline Earth Metal
+  atomicMass: 24.305
+  row: 3
+  group: 2
+  electronConfiguration: "[Ne] 3s²"
+- atomicNumber: 13
+  symbol: Al
+  name: Aluminum
+  category: Post-Transition Metal
+  atomicMass: 26.982
+  row: 3
+  group: 13
+  electronConfiguration: "[Ne] 3s² 3p¹"
+- atomicNumber: 14
+  symbol: Si
+  name: Silicon
+  category: Metalloid
+  atomicMass: 28.085
+  row: 3
+  group: 14
+  electronConfiguration: "[Ne] 3s² 3p²"
+- atomicNumber: 15
+  symbol: P
+  name: Phosphorus
+  category: Nonmetal
+  atomicMass: 30.974
+  row: 3
+  group: 15
+  electronConfiguration: "[Ne] 3s² 3p³"
+- atomicNumber: 16
+  symbol: S
+  name: Sulfur
+  category: Nonmetal
+  atomicMass: 32.06
+  row: 3
+  group: 16
+  electronConfiguration: "[Ne] 3s² 3p⁴"
+- atomicNumber: 17
+  symbol: Cl
+  name: Chlorine
+  category: Halogen
+  atomicMass: 35.45
+  row: 3
+  group: 17
+  electronConfiguration: "[Ne] 3s² 3p⁵"
+- atomicNumber: 18
+  symbol: Ar
+  name: Argon
+  category: Noble Gas
+  atomicMass: 39.948
+  row: 3
+  group: 18
+  electronConfiguration: "[Ne] 3s² 3p⁶"
+- atomicNumber: 19
+  symbol: K
+  name: Potassium
+  category: Alkali Metal
+  atomicMass: 39.098
+  row: 4
+  group: 1
+  electronConfiguration: "[Ar] 4s¹"
+- atomicNumber: 20
+  symbol: Ca
+  name: Calcium
+  category: Alkaline Earth Metal
+  atomicMass: 40.078
+  row: 4
+  group: 2
+  electronConfiguration: "[Ar] 4s²"
+- atomicNumber: 21
+  symbol: Sc
+  name: Scandium
+  category: Transition Metal
+  atomicMass: 44.956
+  row: 4
+  group: 3
+  electronConfiguration: "[Ar] 3d¹ 4s²"
+- atomicNumber: 22
+  symbol: Ti
+  name: Titanium
+  category: Transition Metal
+  atomicMass: 47.867
+  row: 4
+  group: 4
+  electronConfiguration: "[Ar] 3d² 4s²"
+- atomicNumber: 23
+  symbol: V
+  name: Vanadium
+  category: Transition Metal
+  atomicMass: 50.942
+  row: 4
+  group: 5
+  electronConfiguration: "[Ar] 3d³ 4s²"
+- atomicNumber: 24
+  symbol: Cr
+  name: Chromium
+  category: Transition Metal
+  atomicMass: 51.996
+  row: 4
+  group: 6
+  electronConfiguration: "[Ar] 3d⁵ 4s¹"
+- atomicNumber: 25
+  symbol: Mn
+  name: Manganese
+  category: Transition Metal
+  atomicMass: 54.938
+  row: 4
+  group: 7
+  electronConfiguration: "[Ar] 3d⁵ 4s²"
+- atomicNumber: 26
+  symbol: Fe
+  name: Iron
+  category: Transition Metal
+  atomicMass: 55.845
+  row: 4
+  group: 8
+  electronConfiguration: "[Ar] 3d⁶ 4s²"
+- atomicNumber: 27
+  symbol: Co
+  name: Cobalt
+  category: Transition Metal
+  atomicMass: 58.933
+  row: 4
+  group: 9
+  electronConfiguration: "[Ar] 3d⁷ 4s²"
+- atomicNumber: 28
+  symbol: Ni
+  name: Nickel
+  category: Transition Metal
+  atomicMass: 58.693
+  row: 4
+  group: 10
+  electronConfiguration: "[Ar] 3d⁸ 4s²"
+- atomicNumber: 29
+  symbol: Cu
+  name: Copper
+  category: Transition Metal
+  atomicMass: 63.546
+  row: 4
+  group: 11
+  electronConfiguration: "[Ar] 3d¹⁰ 4s¹"
+- atomicNumber: 30
+  symbol: Zn
+  name: Zinc
+  category: Transition Metal
+  atomicMass: 65.38
+  row: 4
+  group: 12
+  electronConfiguration: "[Ar] 3d¹⁰ 4s²"
+- atomicNumber: 31
+  symbol: Ga
+  name: Gallium
+  category: Post-Transition Metal
+  atomicMass: 69.723
+  row: 4
+  group: 13
+  electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p¹"
+- atomicNumber: 32
+  symbol: Ge
+  name: Germanium
+  category: Metalloid
+  atomicMass: 72.63
+  row: 4
+  group: 14
+  electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p²"
+- atomicNumber: 33
+  symbol: As
+  name: Arsenic
+  category: Metalloid
+  atomicMass: 74.922
+  row: 4
+  group: 15
+  electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p³"
+- atomicNumber: 34
+  symbol: Se
+  name: Selenium
+  category: Nonmetal
+  atomicMass: 78.971
+  row: 4
+  group: 16
+  electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p⁴"
+- atomicNumber: 35
+  symbol: Br
+  name: Bromine
+  category: Halogen
+  atomicMass: 79.904
+  row: 4
+  group: 17
+  electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p⁵"
+- atomicNumber: 36
+  symbol: Kr
+  name: Krypton
+  category: Noble Gas
+  atomicMass: 83.798
+  row: 4
+  group: 18
+  electronConfiguration: "[Ar] 3d¹⁰ 4s² 4p⁶"
+- atomicNumber: 37
+  symbol: Rb
+  name: Rubidium
+  category: Alkali Metal
+  atomicMass: 85.468
+  row: 5
+  group: 1
+  electronConfiguration: "[Kr] 5s¹"
+- atomicNumber: 38
+  symbol: Sr
+  name: Strontium
+  category: Alkaline Earth Metal
+  atomicMass: 87.62
+  row: 5
+  group: 2
+  electronConfiguration: "[Kr] 5s²"
+- atomicNumber: 39
+  symbol: Y
+  name: Yttrium
+  category: Transition Metal
+  atomicMass: 88.906
+  row: 5
+  group: 3
+  electronConfiguration: "[Kr] 4d¹ 5s²"
+- atomicNumber: 40
+  symbol: Zr
+  name: Zirconium
+  category: Transition Metal
+  atomicMass: 91.224
+  row: 5
+  group: 4
+  electronConfiguration: "[Kr] 4d² 5s²"
+- atomicNumber: 41
+  symbol: Nb
+  name: Niobium
+  category: Transition Metal
+  atomicMass: 92.906
+  row: 5
+  group: 5
+  electronConfiguration: "[Kr] 4d⁴ 5s¹"
+- atomicNumber: 42
+  symbol: Mo
+  name: Molybdenum
+  category: Transition Metal
+  atomicMass: 95.95
+  row: 5
+  group: 6
+  electronConfiguration: "[Kr] 4d⁵ 5s¹"
+- atomicNumber: 43
+  symbol: Tc
+  name: Technetium
+  category: Transition Metal
+  atomicMass: 98
+  row: 5
+  group: 7
+  electronConfiguration: "[Kr] 4d⁵ 5s²"
+- atomicNumber: 44
+  symbol: Ru
+  name: Ruthenium
+  category: Transition Metal
+  atomicMass: 101.07
+  row: 5
+  group: 8
+  electronConfiguration: "[Kr] 4d⁷ 5s¹"
+- atomicNumber: 45
+  symbol: Rh
+  name: Rhodium
+  category: Transition Metal
+  atomicMass: 102.906
+  row: 5
+  group: 9
+  electronConfiguration: "[Kr] 4d⁸ 5s¹"
+- atomicNumber: 46
+  symbol: Pd
+  name: Palladium
+  category: Transition Metal
+  atomicMass: 106.42
+  row: 5
+  group: 10
+  electronConfiguration: "[Kr] 4d¹⁰"
+- atomicNumber: 47
+  symbol: Ag
+  name: Silver
+  category: Transition Metal
+  atomicMass: 107.868
+  row: 5
+  group: 11
+  electronConfiguration: "[Kr] 4d¹⁰ 5s¹"
+- atomicNumber: 48
+  symbol: Cd
+  name: Cadmium
+  category: Transition Metal
+  atomicMass: 112.411
+  row: 5
+  group: 12
+  electronConfiguration: "[Kr] 4d¹⁰ 5s²"
+- atomicNumber: 49
+  symbol: In
+  name: Indium
+  category: Post-Transition Metal
+  atomicMass: 114.818
+  row: 5
+  group: 13
+  electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p¹"
+- atomicNumber: 50
+  symbol: Sn
+  name: Tin
+  category: Post-Transition Metal
+  atomicMass: 118.71
+  row: 5
+  group: 14
+  electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p²"
+- atomicNumber: 51
+  symbol: Sb
+  name: Antimony
+  category: Metalloid
+  atomicMass: 121.76
+  row: 5
+  group: 15
+  electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p³"
+- atomicNumber: 52
+  symbol: Te
+  name: Tellurium
+  category: Metalloid
+  atomicMass: 127.6
+  row: 5
+  group: 16
+  electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p⁴"
+- atomicNumber: 53
+  symbol: I
+  name: Iodine
+  category: Halogen
+  atomicMass: 126.904
+  row: 5
+  group: 17
+  electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p⁵"
+- atomicNumber: 54
+  symbol: Xe
+  name: Xenon
+  category: Noble Gas
+  atomicMass: 131.293
+  row: 5
+  group: 18
+  electronConfiguration: "[Kr] 4d¹⁰ 5s² 5p⁶"
+- atomicNumber: 55
+  symbol: Cs
+  name: Cesium
+  category: Alkali Metal
+  atomicMass: 132.905
+  row: 6
+  group: 1
+  electronConfiguration: "[Xe] 6s¹"
+- atomicNumber: 56
+  symbol: Ba
+  name: Barium
+  category: Alkaline Earth Metal
+  atomicMass: 137.327
+  row: 6
+  group: 2
+  electronConfiguration: "[Xe] 6s²"
+- atomicNumber: 57
+  symbol: La
+  name: Lanthanum
+  category: Lanthanide
+  atomicMass: 138.905
+  row: 6
+  group: 3
+  electronConfiguration: "[Xe] 5d¹ 6s²"
+- atomicNumber: 58
+  symbol: Ce
+  name: Cerium
+  category: Lanthanide
+  atomicMass: 140.116
+  row: 6
+  group: 4
+  electronConfiguration: "[Xe] 4f¹ 5d¹ 6s²"
+- atomicNumber: 59
+  symbol: Pr
+  name: Praseodymium
+  category: Lanthanide
+  atomicMass: 140.908
+  row: 6
+  group: 5
+  electronConfiguration: "[Xe] 4f³ 6s²"
+- atomicNumber: 60
+  symbol: Nd
+  name: Neodymium
+  category: Lanthanide
+  atomicMass: 144.242
+  row: 6
+  group: 6
+  electronConfiguration: "[Xe] 4f⁴ 6s²"
+- atomicNumber: 61
+  symbol: Pm
+  name: Promethium
+  category: Lanthanide
+  atomicMass: 145
+  row: 6
+  group: 7
+  electronConfiguration: "[Xe] 4f⁵ 6s²"
+- atomicNumber: 62
+  symbol: Sm
+  name: Samarium
+  category: Lanthanide
+  atomicMass: 150.36
+  row: 6
+  group: 8
+  electronConfiguration: "[Xe] 4f⁶ 6s²"
+- atomicNumber: 63
+  symbol: Eu
+  name: Europium
+  category: Lanthanide
+  atomicMass: 151.964
+  row: 6
+  group: 9
+  electronConfiguration: "[Xe] 4f⁷ 6s²"
+- atomicNumber: 64
+  symbol: Gd
+  name: Gadolinium
+  category: Lanthanide
+  atomicMass: 157.25
+  row: 6
+  group: 10
+  electronConfiguration: "[Xe] 4f⁷ 5d¹ 6s²"
+- atomicNumber: 65
+  symbol: Tb
+  name: Terbium
+  category: Lanthanide
+  atomicMass: 158.925
+  row: 6
+  group: 11
+  electronConfiguration: "[Xe] 4f⁹ 6s²"
+- atomicNumber: 66
+  symbol: Dy
+  name: Dysprosium
+  category: Lanthanide
+  atomicMass: 162.5
+  row: 6
+  group: 12
+  electronConfiguration: "[Xe] 4f¹⁰ 6s²"
+- atomicNumber: 67
+  symbol: Ho
+  name: Holmium
+  category: Lanthanide
+  atomicMass: 164.93
+  row: 6
+  group: 13
+  electronConfiguration: "[Xe] 4f¹¹ 6s²"
+- atomicNumber: 68
+  symbol: Er
+  name: Erbium
+  category: Lanthanide
+  atomicMass: 167.259
+  row: 6
+  group: 14
+  electronConfiguration: "[Xe] 4f¹² 6s²"
+- atomicNumber: 69
+  symbol: Tm
+  name: Thulium
+  category: Lanthanide
+  atomicMass: 168.934
+  row: 6
+  group: 15
+  electronConfiguration: "[Xe] 4f¹³ 6s²"
+- atomicNumber: 70
+  symbol: Yb
+  name: Ytterbium
+  category: Lanthanide
+  atomicMass: 173.054
+  row: 6
+  group: 16
+  electronConfiguration: "[Xe] 4f¹⁴ 6s²"
+- atomicNumber: 71
+  symbol: Lu
+  name: Lutetium
+  category: Lanthanide
+  atomicMass: 174.967
+  row: 6
+  group: 17
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹ 6s²"
+- atomicNumber: 72
+  symbol: Hf
+  name: Hafnium
+  category: Transition Metal
+  atomicMass: 178.49
+  row: 6
+  group: 4
+  electronConfiguration: "[Xe] 4f¹⁴ 5d² 6s²"
+- atomicNumber: 73
+  symbol: Ta
+  name: Tantalum
+  category: Transition Metal
+  atomicMass: 180.948
+  row: 6
+  group: 5
+  electronConfiguration: "[Xe] 4f¹⁴ 5d³ 6s²"
+- atomicNumber: 74
+  symbol: W
+  name: Tungsten
+  category: Transition Metal
+  atomicMass: 183.84
+  row: 6
+  group: 6
+  electronConfiguration: "[Xe] 4f¹⁴ 5d⁴ 6s²"
+- atomicNumber: 75
+  symbol: Re
+  name: Rhenium
+  category: Transition Metal
+  atomicMass: 186.207
+  row: 6
+  group: 7
+  electronConfiguration: "[Xe] 4f¹⁴ 5d⁵ 6s²"
+- atomicNumber: 76
+  symbol: Os
+  name: Osmium
+  category: Transition Metal
+  atomicMass: 190.23
+  row: 6
+  group: 8
+  electronConfiguration: "[Xe] 4f¹⁴ 5d⁶ 6s²"
+- atomicNumber: 77
+  symbol: Ir
+  name: Iridium
+  category: Transition Metal
+  atomicMass: 192.217
+  row: 6
+  group: 9
+  electronConfiguration: "[Xe] 4f¹⁴ 5d⁷ 6s²"
+- atomicNumber: 78
+  symbol: Pt
+  name: Platinum
+  category: Transition Metal
+  atomicMass: 195.084
+  row: 6
+  group: 10
+  electronConfiguration: "[Xe] 4f¹⁴ 5d⁹ 6s¹"
+- atomicNumber: 79
+  symbol: Au
+  name: Gold
+  category: Transition Metal
+  atomicMass: 196.967
+  row: 6
+  group: 11
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s¹"
+- atomicNumber: 80
+  symbol: Hg
+  name: Mercury
+  category: Transition Metal
+  atomicMass: 200.592
+  row: 6
+  group: 12
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s²"
+- atomicNumber: 81
+  symbol: Tl
+  name: Thallium
+  category: Post-Transition Metal
+  atomicMass: 204.38
+  row: 6
+  group: 13
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹"
+- atomicNumber: 82
+  symbol: Pb
+  name: Lead
+  category: Post-Transition Metal
+  atomicMass: 207.2
+  row: 6
+  group: 14
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²"
+- atomicNumber: 83
+  symbol: Bi
+  name: Bismuth
+  category: Post-Transition Metal
+  atomicMass: 208.98
+  row: 6
+  group: 15
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³"
+- atomicNumber: 84
+  symbol: Po
+  name: Polonium
+  category: Metalloid
+  atomicMass: 209
+  row: 6
+  group: 16
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴"
+- atomicNumber: 85
+  symbol: At
+  name: Astatine
+  category: Halogen
+  atomicMass: 210
+  row: 6
+  group: 17
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵"
+- atomicNumber: 86
+  symbol: Rn
+  name: Radon
+  category: Noble Gas
+  atomicMass: 222
+  row: 6
+  group: 18
+  electronConfiguration: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶"
+- atomicNumber: 87
+  symbol: Fr
+  name: Francium
+  category: Alkali Metal
+  atomicMass: 223
+  row: 7
+  group: 1
+  electronConfiguration: "[Rn] 7s¹"
+- atomicNumber: 88
+  symbol: Ra
+  name: Radium
+  category: Alkaline Earth Metal
+  atomicMass: 226
+  row: 7
+  group: 2
+  electronConfiguration: "[Rn] 7s²"
+- atomicNumber: 89
+  symbol: Ac
+  name: Actinium
+  category: Actinide
+  atomicMass: 227
+  row: 7
+  group: 3
+  electronConfiguration: "[Rn] 6d¹ 7s²"
+- atomicNumber: 90
+  symbol: Th
+  name: Thorium
+  category: Actinide
+  atomicMass: 232.038
+  row: 7
+  group: 4
+  electronConfiguration: "[Rn] 6d² 7s²"
+- atomicNumber: 91
+  symbol: Pa
+  name: Protactinium
+  category: Actinide
+  atomicMass: 231.036
+  row: 7
+  group: 5
+  electronConfiguration: "[Rn] 5f² 6d¹ 7s²"
+- atomicNumber: 92
+  symbol: U
+  name: Uranium
+  category: Actinide
+  atomicMass: 238.029
+  row: 7
+  group: 6
+  electronConfiguration: "[Rn] 5f³ 6d¹ 7s²"
+- atomicNumber: 93
+  symbol: Np
+  name: Neptunium
+  category: Actinide
+  atomicMass: 237
+  row: 7
+  group: 7
+  electronConfiguration: "[Rn] 5f⁴ 6d¹ 7s²"
+- atomicNumber: 94
+  symbol: Pu
+  name: Plutonium
+  category: Actinide
+  atomicMass: 244
+  row: 7
+  group: 8
+  electronConfiguration: "[Rn] 5f⁶ 7s²"
+- atomicNumber: 95
+  symbol: Am
+  name: Americium
+  category: Actinide
+  atomicMass: 243
+  row: 7
+  group: 9
+  electronConfiguration: "[Rn] 5f⁷ 7s²"
+- atomicNumber: 96
+  symbol: Cm
+  name: Curium
+  category: Actinide
+  atomicMass: 247
+  row: 7
+  group: 10
+  electronConfiguration: "[Rn] 5f⁷ 6d¹ 7s²"
+- atomicNumber: 97
+  symbol: Bk
+  name: Berkelium
+  category: Actinide
+  atomicMass: 247
+  row: 7
+  group: 11
+  electronConfiguration: "[Rn] 5f⁹ 7s²"
+- atomicNumber: 98
+  symbol: Cf
+  name: Californium
+  category: Actinide
+  atomicMass: 251
+  row: 7
+  group: 12
+  electronConfiguration: "[Rn] 5f¹⁰ 7s²"
+- atomicNumber: 99
+  symbol: Es
+  name: Einsteinium
+  category: Actinide
+  atomicMass: 252
+  row: 7
+  group: 13
+  electronConfiguration: "[Rn] 5f¹¹ 7s²"
+- atomicNumber: 100
+  symbol: Fm
+  name: Fermium
+  category: Actinide
+  atomicMass: 257
+  row: 7
+  group: 14
+  electronConfiguration: "[Rn] 5f¹² 7s²"
+- atomicNumber: 101
+  symbol: Md
+  name: Mendelevium
+  category: Actinide
+  atomicMass: 258
+  row: 7
+  group: 15
+  electronConfiguration: "[Rn] 5f¹³ 7s²"
+- atomicNumber: 102
+  symbol: 'No'
+  name: Nobelium
+  category: Actinide
+  atomicMass: 259
+  row: 7
+  group: 16
+  electronConfiguration: "[Rn] 5f¹⁴ 7s²"
+- atomicNumber: 103
+  symbol: Lr
+  name: Lawrencium
+  category: Actinide
+  atomicMass: 262
+  row: 7
+  group: 17
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹ 7s²"
+- atomicNumber: 104
+  symbol: Rf
+  name: Rutherfordium
+  category: Transition Metal
+  atomicMass: 267
+  row: 7
+  group: 4
+  electronConfiguration: "[Rn] 5f¹⁴ 6d² 7s²"
+- atomicNumber: 105
+  symbol: Db
+  name: Dubnium
+  category: Transition Metal
+  atomicMass: 268
+  row: 7
+  group: 5
+  electronConfiguration: "[Rn] 5f¹⁴ 6d³ 7s²"
+- atomicNumber: 106
+  symbol: Sg
+  name: Seaborgium
+  category: Transition Metal
+  atomicMass: 271
+  row: 7
+  group: 6
+  electronConfiguration: "[Rn] 5f¹⁴ 6d⁴ 7s²"
+- atomicNumber: 107
+  symbol: Bh
+  name: Bohrium
+  category: Transition Metal
+  atomicMass: 272
+  row: 7
+  group: 7
+  electronConfiguration: "[Rn] 5f¹⁴ 6d⁵ 7s²"
+- atomicNumber: 108
+  symbol: Hs
+  name: Hassium
+  category: Transition Metal
+  atomicMass: 270
+  row: 7
+  group: 8
+  electronConfiguration: "[Rn] 5f¹⁴ 6d⁶ 7s²"
+- atomicNumber: 109
+  symbol: Mt
+  name: Meitnerium
+  category: Transition Metal
+  atomicMass: 276
+  row: 7
+  group: 9
+  electronConfiguration: "[Rn] 5f¹⁴ 6d⁷ 7s²"
+- atomicNumber: 110
+  symbol: Ds
+  name: Darmstadtium
+  category: Transition Metal
+  atomicMass: 281
+  row: 7
+  group: 10
+  electronConfiguration: "[Rn] 5f¹⁴ 6d⁹ 7s¹"
+- atomicNumber: 111
+  symbol: Rg
+  name: Roentgenium
+  category: Transition Metal
+  atomicMass: 280
+  row: 7
+  group: 11
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s¹"
+- atomicNumber: 112
+  symbol: Cn
+  name: Copernicium
+  category: Transition Metal
+  atomicMass: 285
+  row: 7
+  group: 12
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s²"
+- atomicNumber: 113
+  symbol: Nh
+  name: Nihonium
+  category: Post-Transition Metal
+  atomicMass: 286
+  row: 7
+  group: 13
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹"
+- atomicNumber: 114
+  symbol: Fl
+  name: Flerovium
+  category: Post-Transition Metal
+  atomicMass: 289
+  row: 7
+  group: 14
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²"
+- atomicNumber: 115
+  symbol: Mc
+  name: Moscovium
+  category: Post-Transition Metal
+  atomicMass: 290
+  row: 7
+  group: 15
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³"
+- atomicNumber: 116
+  symbol: Lv
+  name: Livermorium
+  category: Post-Transition Metal
+  atomicMass: 293
+  row: 7
+  group: 16
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴"
+- atomicNumber: 117
+  symbol: Ts
+  name: Tennessine
+  category: Halogen
+  atomicMass: 294
+  row: 7
+  group: 17
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵"
+- atomicNumber: 118
+  symbol: Og
+  name: Oganesson
+  category: Noble Gas
+  atomicMass: 294
+  row: 7
+  group: 18
+  electronConfiguration: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶"

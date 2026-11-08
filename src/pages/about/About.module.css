@@ -1,0 +1,107 @@
+/* About page — section typography & layout
+   Project cards themselves use the shared .metro-card primitives
+   defined in src/index.css (MetroUI design tokens, xs corner radius).
+*/
+
+.page {
+  padding-left: 1rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.intro {
+  color: rgb(253 186 116); /* orange-300 */
+}
+
+.intro hr {
+  margin: 1rem 0;
+  border-color: rgb(55 65 81); /* gray-700 */
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.subtitleSmall {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  color: rgb(96 165 250); /* blue-400 */
+}
+
+.subtitleLink:hover {
+  text-decoration: underline;
+}
+
+.lead {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.list {
+  list-style: disc;
+  list-style-position: inside;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.listItem {
+  margin-bottom: 0.25rem;
+}
+
+.accent {
+  color: rgb(96 165 250); /* blue-400 */
+}
+
+.jobBlock {
+  margin-bottom: 1.5rem;
+}
+
+.stack {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.profileTable {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.profileLeft {
+  text-align: left;
+}
+
+.profileRight {
+  text-align: right;
+}
+
+/* Projects grid — two columns on md+, one column otherwise */
+.projects {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .projects {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.comingSoon {
+  font-size: 0.75rem;
+  color: rgb(156 163 175); /* gray-400 */
+  margin-top: 0.25rem;
+}

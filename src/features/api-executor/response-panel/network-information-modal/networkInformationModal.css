@@ -1,0 +1,59 @@
+.network-information-modal {
+    background: white;
+    padding: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.network-information-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999; /* Ensure the overlay is above other elements */
+    background: transparent;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 0.75rem;
+    font-weight: lighter;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+/* Network info table styles */
+.network-information-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.network-information-table th,
+.network-information-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.network-information-table th {
+    background-color: #f9f9f9;
+    font-weight: lighter;
+}

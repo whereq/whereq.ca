@@ -1,0 +1,36 @@
+<svg width="300" height="75" viewBox="0 0 300 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .katex {
+      font-family: "KaTeX_Math", "KaTeX_Size1"; /* Or your preferred math font */
+      font-size: 24px; /* Adjust size as needed */
+    }
+  </style>
+  <foreignObject x="0" y="0" width="300" height="75">
+    <div xmlns="http://www.w3.org/1999/xhtml" class="katex">
+      <span class="katex-mathml">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <mrow>
+            <mi>α</mi>
+            <mo>=</mo>
+            <mfrac>
+              <msup>
+                <mi>e</mi>
+                <mn>2</mn>
+              </msup>
+              <mrow>
+                <mn>4</mn>
+                <mi>π</mi>
+                <msub>
+                  <mi>ε</mi>
+                  <mn>0</mn>
+                </msub>
+                <mi>ħ</mi>
+                <mi>c</mi>
+              </mrow>
+            </mfrac>
+          </mrow>
+        </math>
+      </span>
+      </div>
+  </foreignObject>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "name": "WhereQ App Hub",
+  "dockerFile": "./Dockerfile",
+  "context": "..",
+  "postCreateCommand": "yarn install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "forwardPorts": [5173],
+  "remoteUser": "node"
+}
