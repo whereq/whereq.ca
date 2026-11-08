@@ -24,6 +24,8 @@
 #   --minor                Bump minor (e.g. v1.1.0 → v1.2.0)  [default]
 #   --patch                Bump patch (e.g. v1.1.0 → v1.1.1)
 #   --no-notes            Don't scaffold docs/releases/<version>-<codename>-<date>.md
+#   --status <status>     Status for the scaffolded release note:
+#                         shipped | draft | yanked  (default: draft)
 #   --skip-checks         Skip the CI gates (lint / type-check / build / header
 #                         parity). Only for a deliberate hotfix.
 #   -y, --yes              Skip the pre-release interactive confirmation
@@ -98,6 +100,7 @@ CODENAME=""           # empty = slug of the commit message
 SQUASH_N=""           # empty = all since merge-base; numeric = last N
 DO_SQUASH=true
 DO_NOTES=true
+RELEASE_STATUS="draft"
 DO_CHECKS=true
 DRY_RUN=false
 BUMP_MAJOR=false
@@ -238,6 +241,9 @@ parse_args() {
                 DO_SQUASH=false; shift ;;
             --no-notes)
                 DO_NOTES=false; shift ;;
+            --status)
+                [[ -n "${2:-}" ]] || { error "--status requires a value"; exit 1; }
+                RELEASE_STATUS="$2"; shift 2 ;;
             --skip-checks)
                 DO_CHECKS=false; shift ;;
             --tag-message)
@@ -274,6 +280,13 @@ parse_args() {
         error "--version must look like X.Y.Z (got '${VERSION}')"
         exit 1
     fi
+
+    case "$RELEASE_STATUS" in
+        shipped|draft|yanked) ;;
+        *)
+            error "--status must be one of: shipped, draft, yanked (got '${RELEASE_STATUS}')"
+            exit 1 ;;
+    esac
 }
 
 # -----------------------------------------------------------------------------
@@ -540,7 +553,7 @@ do_release_notes() {
 version: ${version}
 codename: ${codename}
 date: ${today}
-status: draft
+status: ${RELEASE_STATUS}
 audience: public
 ---
 
@@ -555,8 +568,8 @@ audience: public
 ## Notes
 
 - The release notes live in \`docs/releases/${filename}\`.
-- Set \`status: shipped\` once the Vercel deploy is live.
 - The git tag for this release is \`v${version}\`.
+- Status is \`${RELEASE_STATUS}\`${RELEASE_STATUS:+, set by \`--status\`}.
 
 ## Links
 

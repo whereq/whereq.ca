@@ -97,6 +97,7 @@ Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon v
 - **CI gates run inside the release script** (they abort the release on failure): COOP/COEP/CORP header parity between `vite.config.ts` and `vercel.json` → `yarn lint` (0 errors) → `tsc --noEmit` for both tsconfigs → `yarn build`.
 - **Branches**: `dev` is the working branch (the script requires it), `main` is the deploy branch. Short-lived `feature/*` / `fix/*` branches merge back into `dev`.
 - **Tags**: `v<MAJOR>.<MINOR>.<PATCH>` (e.g. `v1.2.0`), derived from the newest release note and bumped minor by default; `--version` / `--major` / `--patch` override. Unlike the sibling apps' 4-segment `vX.Y.Z.N` scheme, whereq.ca uses plain semver to match its release-note filenames.
+- **Release notes**: the script scaffolds `docs/releases/v<version>-<codename>-<date>.md` (`--no-notes` to skip, `--status shipped|draft|yanked` to set the front-matter status; default `draft`).
 - Push to `main` → Vercel auto-deploys. No manual gate, no staging. PRs get a Vercel preview URL automatically.
 - Rollback: Vercel dashboard → Deployments → Promote previous green deployment to Production.
 - **Pre-deploy must-do**: run `bin/release.sh`; then smoke-test `yarn build && yarn preview` by Prepare-cutting a video in the multimedia workspace (the COOP/COEP smoke test).
