@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpload, faDownload, faImage } from "@fortawesome/free-solid-svg-icons";
 // @ts-expect-error - gif.js has no types
 import GIF from "gif.js";
-// @ts-expect-error - gifuct-js has no first-class types
+// gifuct-js ships its own TypeScript declarations (index.d.ts) since v2.1.
 import { parseGIF, decompressFrames } from "gifuct-js";
 import CustomModal from "@/components/modals/CustomModal";
 
