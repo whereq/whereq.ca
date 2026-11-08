@@ -1880,6 +1880,11 @@ no env-var abstraction yet (see §17 known issues).
 Before every deploy, run these locally and confirm:
 
 ```bash
+# 0. (Preferred) run the whole thing — the release script automates
+#    steps 1, 2 and 4, then commits, tags and pushes. Pushing to main
+#    IS the deploy (Vercel auto-deploy). See §19.7.
+bin/release.sh --message "Your release summary"
+
 # 1. Lint must be clean (0 errors; warnings OK if at baseline).
 yarn lint
 #   → expected: "✖ 24 problems (0 errors, 24 warnings)" or fewer.
@@ -1888,6 +1893,12 @@ yarn lint
 yarn build
 #   → expected: "✓ built in <N>s"
 #   → the "Adjust chunk size limit" line is NOT a failure.
+#
+# 2b. Type-check must be clean. `yarn build` is plain `vite build` and
+#     does NOT type-check, so this has to run separately:
+npx tsc -p tsconfig.app.json --noEmit
+npx tsc -p tsconfig.node.json --noEmit
+#   → expected: no output, exit code 0.
 
 # 3. (Manual) smoke-test the production build locally.
 yarn build && yarn preview
@@ -1903,9 +1914,11 @@ git diff HEAD~1 -- vite.config.ts vercel.json
 #   → the three COOP/COEP/CORP values must be identical between
 #     the two files. If they diverge, the prod build will fail in
 #     a way no one notices until users complain. See §16.
+#   → bin/release.sh automates this check.
 
 # 5. (Manual) update docs/releases/ if the release is user-visible.
 #   → see §19.7 below for the release-notes format.
+#   → bin/release.sh scaffolds the release note automatically.
 ```
 
 ### 19.6 Manual smoke tests (no automated test suite)
@@ -1939,11 +1952,70 @@ If any of these fail, **do not push to `main`**.
 
 ### 19.7 Cutting a release
 
+`bin/release.sh` is the release entry point. It mirrors the release script
+used by the other whereq universe apps (chroniq.cc, catobigato.com,
+caijing.today) so the workflow feels identical everywhere, with two
+whereq.ca-specific differences: **no `deploy.sh`** (Vercel deploys on the
+main push) and **semver tags** instead of the 4-segment family build
+counter.
+
+```bash
+# From the dev branch:
+bin/release.sh --message "Add background-removal presets"
+
+# Preview without touching anything (runs the read-only gates):
+bin/release.sh --dry-run --message "Add background-removal presets"
+```
+
+What it does, in order:
+
+1. **Preflight** — verifies the repo, the branch (`dev`), the remote
+   (`git@whereq.github.com:whereq/whereq.ca.git`) and the commit
+   identity. The identity check matters: the git identity is set
+   repo-locally, and the global config is still `ccbus-cc`, so a commit
+   made outside this folder would be attributed to the wrong account.
+2. **CI gates** — the four checks from §19.5 that can be automated:
+   - COOP/COEP/CORP header parity between `vite.config.ts` and
+     `vercel.json` (§16) — this is the check that matters most;
+   - `yarn lint` — must be 0 errors;
+   - `npx tsc -p tsconfig.app.json --noEmit` and
+     `npx tsc -p tsconfig.node.json --noEmit` — must be 0 errors;
+   - `yarn build` — must succeed.
+   A failing gate aborts the release before anything is committed.
+3. **Release note** — scaffolds
+   `docs/releases/v<VERSION>-<codename>-<YYYY-MM-DD>.md` with the
+   front-matter schema below, unless one already exists for that
+   version. Use `--no-notes` to skip.
+4. **Commit + squash** — stages everything (`git add -A`), commits with
+   `--message`, then squashes the dev commits since the merge-base with
+   `main` into that single commit.
+5. **Push dev → merge to main → tag → push main + tag.** The merge to
+   `main` is what triggers the Vercel deploy.
+
+The version is derived from the newest release note on disk and bumped
+by **minor** by default (`v1.1.0` → `v1.2.0`). Override with
+`--version X.Y.Z`, or `--major` / `--patch`.
+
+Useful flags:
+
+| Flag | Effect |
+|---|---|
+| `-m, --message <msg>` | Commit / merge / tag message. Required. |
+| `--version <X.Y.Z>` | Pin the version instead of auto-bumping. |
+| `--codename <name>` | Codename for the release-note filename. |
+| `--major` / `--minor` / `--patch` | Which segment to bump (default: minor). |
+| `--squash <n>` | Squash only the last N commits. |
+| `--no-squash` | Push the dev commits as-is. |
+| `--no-notes` | Don't scaffold a release note. |
+| `--skip-checks` | Skip the CI gates (deliberate hotfixes only). |
+| `-y, --yes` | Skip the confirmation prompt. |
+| `--dry-run` | Print everything, change nothing. |
+
 The current version field in `package.json` is `"0.0.0"` — this is
-intentional. There is **no semver discipline** in this repo; every
-push to `main` is implicitly a release. The user-facing release
-notes live in `docs/releases/<version>.md` with this naming
-convention:
+intentional. There is **no semver discipline** in `package.json`; the
+release version lives in the git tag and the release note. The
+user-facing release notes live in `docs/releases/<version>.md` with this
+naming convention:
 
 - `v<MAJOR>.<MINOR>.<PATCH>-<codename>-YYYY-MM-DD.md`
 - Example (already shipped): `v1.0.0-galaxy-2026-06-16.md`
@@ -1975,7 +2047,8 @@ The body of a release note should contain:
 
 There is **no manual deploy command**. The flow is:
 
-1. Merge your PR to `main`.
+1. Merge your PR to `main` (or run `bin/release.sh`, which merges
+   `dev` → `main` and pushes for you — §19.7).
 2. Vercel auto-detects the push via the connected GitHub repo and
    starts a build. The Vercel build runs `yarn build` (no install
    step needed because Vercel caches `node_modules`).
@@ -2009,7 +2082,19 @@ observed convention is:
   `Add <thing>` / `Fix <thing>` / `Refactor <thing>` (the git log
   is full of these — see `git log --oneline`).
 
-This isn't enforced. If you want stricter conventions, add a
+Since `bin/release.sh` was added, the release flow runs through a
+**`dev` branch** — the same dev → main → tag shape used by the other
+whereq universe apps:
+
+- `dev` is the working branch. `bin/release.sh` requires you to be on
+  it, squashes the dev commits since the merge-base with `main`, pushes
+  `dev`, merges `dev` → `main` with a merge commit, tags, and pushes.
+- `main` is the deploy branch — every push to it triggers a Vercel
+  deploy (§19.8).
+- Short-lived `feature/<short-name>` / `fix/<short-name>` branches can
+  still be used for work in progress; merge them back into `dev`.
+
+This isn't enforced by GitHub. If you want stricter conventions, add a
 `CONTRIBUTING.md` and a PR template — the repo doesn't have one.
 
 ### 19.10 Troubleshooting deploy failures
@@ -2025,8 +2110,11 @@ This isn't enforced. If you want stricter conventions, add a
 
 ### 19.11 What this doc does NOT cover
 
-- **No CI/CD config** — there is no `.github/workflows/`,
-  no `.gitlab-ci.yml`. Vercel's auto-deploy from GitHub IS the CI/CD.
+- **No hosted CI/CD config** — there is no `.github/workflows/`,
+  no `.gitlab-ci.yml`. The pipeline is `bin/release.sh`, which runs the
+  lint / type-check / build / header-parity gates locally and then
+  pushes to `main`, where Vercel's auto-deploy from GitHub takes over.
+  The gates run on the machine that runs the script, not on a runner.
 - **No environment promotion** — there's no manual "promote staging to
   prod" gate. `main` is the only deploy target.
 - **No feature flags** — all features ship enabled. If you need a

@@ -16,7 +16,11 @@ yarn build    # production bundle to ./dist/ (~66 MB; ~500 kB chunk warning is e
 yarn preview  # serves ./dist/ on :4173 with prod headers — use to smoke-test before deploy
 yarn lint     # eslint flat config; 0 errors required, baseline ~24 warnings is acceptable
 npx tsc -p tsconfig.app.json --noEmit   # type-check without building
+npx tsc -p tsconfig.node.json --noEmit  # type-check the vite config
+bin/release.sh --message "…"            # release: gates → commit → tag → push main (Vercel deploys)
 ```
+
+`yarn build` is plain `vite build` — it does **not** type-check. Run `tsc --noEmit` separately; `bin/release.sh` does both.
 
 There is **no test runner**. `@testing-library/*` is in `devDependencies` but no test script is configured. QA is manual smoke tests against `yarn build && yarn preview` plus the deploy runbook in `docs/ARCHITECTURE.md` §19.
 
@@ -85,8 +89,16 @@ Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon v
 
 ## Deploy (summary; full runbook in docs/ARCHITECTURE.md §19)
 
-- Push to `main` → Vercel auto-deploys. No manual gate, no CI, no staging.
-- PRs get a Vercel preview URL automatically.
+- **Release with `bin/release.sh`** — the release entry point, modelled on the other whereq universe apps (chroniq.cc, catobigato.com). It runs the CI gates, commits, squashes, pushes `dev`, merges to `main`, tags, and pushes. **There is no `deploy.sh`**: pushing to `main` IS the deploy.
+  ```bash
+  bin/release.sh --message "Your release summary"   # from the dev branch
+  bin/release.sh --dry-run --message "…"            # preview, changes nothing
+  ```
+- **CI gates run inside the release script** (they abort the release on failure): COOP/COEP/CORP header parity between `vite.config.ts` and `vercel.json` → `yarn lint` (0 errors) → `tsc --noEmit` for both tsconfigs → `yarn build`.
+- **Branches**: `dev` is the working branch (the script requires it), `main` is the deploy branch. Short-lived `feature/*` / `fix/*` branches merge back into `dev`.
+- **Tags**: `v<MAJOR>.<MINOR>.<PATCH>` (e.g. `v1.2.0`), derived from the newest release note and bumped minor by default; `--version` / `--major` / `--patch` override. Unlike the sibling apps' 4-segment `vX.Y.Z.N` scheme, whereq.ca uses plain semver to match its release-note filenames.
+- Push to `main` → Vercel auto-deploys. No manual gate, no staging. PRs get a Vercel preview URL automatically.
 - Rollback: Vercel dashboard → Deployments → Promote previous green deployment to Production.
-- **Pre-deploy must-do**: confirm `yarn lint` is 0 errors and `yarn build` succeeds; smoke-test `yarn build && yarn preview` by Prepare-cutting a video in the multimedia workspace (the COOP/COEP smoke test); diff `vite.config.ts` and `vercel.json` to confirm COOP/COEP/CORP headers match.
-- Release notes live in `docs/releases/v<MAJOR>.<MINOR>.<PATCH>-<codename>-YYYY-MM-DD.md` with YAML front-matter (`version`, `codename`, `date`, `status: shipped|yanked|draft`, `audience: public|internal`). The repo's `package.json` version is pinned at `0.0.0` deliberately — no semver discipline; every push to `main` is implicitly a release.
+- **Pre-deploy must-do**: run `bin/release.sh`; then smoke-test `yarn build && yarn preview` by Prepare-cutting a video in the multimedia workspace (the COOP/COEP smoke test).
+- Release notes live in `docs/releases/v<MAJOR>.<MINOR>.<PATCH>-<codename>-YYYY-MM-DD.md` with YAML front-matter (`version`, `codename`, `date`, `status: shipped|yanked|draft`, `audience: public|internal`). The release script scaffolds the file automatically. The repo's `package.json` version is pinned at `0.0.0` deliberately — no semver discipline there; the version lives in the git tag and the release note.
+- **Commit identity**: set repo-locally (`git config --local user.name whereq`). The global config is still `ccbus-cc`, so commits made outside this folder would be attributed to the wrong account. `bin/release.sh` checks this at preflight.
