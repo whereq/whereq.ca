@@ -21,7 +21,7 @@ export const useExistingMap = (
 }
 
 export const useHandleSelectedPlace = (
-    mapRef: React.RefObject<google.maps.Map>,
+    mapRef: React.RefObject<google.maps.Map | null>,
 ) => {
     const { placeMapOverlay } = usePlaceStore();
 
@@ -37,7 +37,7 @@ export const useHandleSelectedPlace = (
 };
 
 export const useHandleOverlayToggling = (
-    mapRef: React.RefObject<google.maps.Map>,
+    mapRef: React.RefObject<google.maps.Map | null>,
     drawOverlays: (overlays: MapOverlay[]) => void,
     clearOverlayArrayOnMap: () => void,
     clearMapOverlayArrayOnMap: () => void
@@ -58,7 +58,7 @@ export const useHandleOverlayToggling = (
 };
 
 export const useHandleClickedOverlay = (
-    mapRef: React.RefObject<google.maps.Map>,
+    mapRef: React.RefObject<google.maps.Map | null>,
     drawOverlays: (overlays: MapOverlay[]) => void,
     clearOverlayArrayOnMap: () => void,
     clearMapOverlayArrayOnMap: () => void
@@ -89,7 +89,7 @@ export const useLoadGoogleMapId = (setGoogleMapId: (id: string) => void) => {
 };
 
 export const useHandleAdvancedMarker = (
-    mapRef: React.RefObject<google.maps.Map>,
+    mapRef: React.RefObject<google.maps.Map | null>,
 ) => {
     const advancedMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
     const isDirtyMarkerRef = useRef(false); // Use a ref to track isDirtyMarker

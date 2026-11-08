@@ -10,8 +10,28 @@ import { loadPyodide, PyodideInterface } from "pyodide";
 //  typeof mod.default.default === "function".)
 import * as ReactAceModule from "react-ace";
 const ReactAceDefault = (ReactAceModule as unknown as { default: unknown }).default;
-const AceEditor = (ReactAceDefault as { default?: React.ComponentType<Record<string, unknown>> })?.default
-    ?? (ReactAceDefault as React.ComponentType<Record<string, unknown>>);
+
+// The Ace wrapper is untyped (`react-ace@14` ships no useful prop types and
+// the CJS→ESM transform makes the real component sit two levels deep), so we
+// declare the handful of props we actually pass. Without this, every
+// `onChange` handler parameter falls back to `any`.
+interface AceEditorProps {
+    mode?: string;
+    theme?: string;
+    value?: string;
+    onChange?: (value: string) => void;
+    placeholder?: string;
+    fontSize?: number;
+    showGutter?: boolean;
+    readOnly?: boolean;
+    width?: string;
+    height?: string;
+    style?: React.CSSProperties;
+    setOptions?: Record<string, unknown>;
+}
+
+const AceEditor = ((ReactAceDefault as { default?: React.ComponentType<AceEditorProps> })?.default
+    ?? (ReactAceDefault as React.ComponentType<AceEditorProps>));
 
 // Import Ace editor modes and themes from node_modules
 import "ace-builds/src-noconflict/mode-python"; // Syntax highlighting for Python
@@ -45,7 +65,14 @@ async function getPyodide(): Promise<PyodideInterface> {
         // duration of the call; under StrictMode + a development server
         // that re-evaluates the module, you can blow past Node's default
         // 10-listener cap and trigger the MaxListenersExceededWarning.
-        const streams = [pyodide.stdout, pyodide.stderr].filter(Boolean) as { setMaxListeners?: (n: number) => void }[];
+        // `stdout` / `stderr` exist on the runtime object at runtime but are
+        // not part of the published `PyodideInterface` type, hence the cast.
+        type PyodideStream = { setMaxListeners?: (n: number) => void };
+        const runtime = pyodide as unknown as {
+            stdout?: PyodideStream;
+            stderr?: PyodideStream;
+        };
+        const streams = [runtime.stdout, runtime.stderr].filter(Boolean) as PyodideStream[];
         streams.forEach((s) => s.setMaxListeners?.(50));
 
         // Install `black`. `loadPackagesFromImports` reads the `import`
