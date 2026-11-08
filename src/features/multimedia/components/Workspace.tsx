@@ -7,6 +7,7 @@ import { SectionType } from "@/features/multimedia/models/MultimediaEnum";
 // a tool the user can't reach.
 import BackgroundRemover from "@/features/multimedia/components/BackgroundRemover";
 import ImageFormatConverter from "@/features/multimedia/components/ImageFormatConverter";
+import ImageToPdf from "@/features/multimedia/components/ImageToPdf";
 import VideoToGif from "@/features/multimedia/components/VideoToGif";
 import GifCompressor from "@/features/multimedia/components/GifCompressor";
 import VideoSplitter from "@/features/multimedia/components/VideoSplitter";
@@ -23,6 +24,7 @@ const Workspace = () => {
                 pulling in the disabled component. */}
             {activeSection === SectionType.BACKGROUND_REMOVER && <BackgroundRemover />}
             {activeSection === SectionType.IMAGE_FORMAT_CONVERTER && <ImageFormatConverter />}
+            {activeSection === SectionType.IMAGE_TO_PDF && <ImageToPdf />}
             {activeSection === SectionType.VIDEO_TO_GIF && <VideoToGif />}
             {activeSection === SectionType.GIF_COMPRESSOR && <GifCompressor />}
             {activeSection === SectionType.VIDEO_SPLITTER && <VideoSplitter />}
