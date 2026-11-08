@@ -1,0 +1,225 @@
+- symbol: "c"  
+  quantity: "Speed of light in vacuum"  
+  value: 299792458  
+  relativeStandardUncertainty: 0  
+
+- symbol: "G"  
+  quantity: "Gravitational constant"  
+  value: 6.67430e-11  
+  relativeStandardUncertainty: 2.2e-5  
+
+- symbol: "h"  
+  quantity: "Planck constant"  
+  value: 6.62607015e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "ħ"  
+  quantity: "Reduced Planck constant"  
+  formula: "ħ = h / (2π)"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "e"  
+  quantity: "Elementary charge"  
+  value: 1.602176634e-19  
+  relativeStandardUncertainty: 0  
+
+- symbol: "m_e"  
+  quantity: "Electron mass"  
+  value: 9.1093837015e-31  
+  relativeStandardUncertainty: 3.0e-10  
+
+- symbol: "m_p"  
+  quantity: "Proton mass"  
+  value: 1.67262192369e-27  
+  relativeStandardUncertainty: 3.1e-10  
+
+- symbol: "m_n"  
+  quantity: "Neutron mass"  
+  value: 1.67492749804e-27  
+  relativeStandardUncertainty: 5.4e-10  
+
+- symbol: "N_A"  
+  quantity: "Avogadro constant"  
+  value: 6.02214076e23  
+  relativeStandardUncertainty: 0  
+
+- symbol: "k"  
+  quantity: "Boltzmann constant"  
+  value: 1.380649e-23  
+  relativeStandardUncertainty: 0  
+
+- symbol: "R"  
+  quantity: "Molar gas constant"  
+  value: 8.314462618  
+  relativeStandardUncertainty: 0  
+
+- symbol: "σ"  
+  quantity: "Stefan-Boltzmann constant"  
+  value: 5.670374419e-8  
+  relativeStandardUncertainty: 0  
+
+- symbol: "ε_0"  
+  quantity: "Vacuum electric permittivity"  
+  value: 8.8541878128e-12  
+  relativeStandardUncertainty: 0  
+
+- symbol: "μ_0"  
+  quantity: "Vacuum magnetic permeability"  
+  value: 1.25663706212e-6  
+  relativeStandardUncertainty: 0  
+
+- symbol: "α"  
+  quantity: "Fine-structure constant"  
+  formula: "α = e² / (4πε₀ħc)"  
+  value: 7.2973525693e-3  
+  relativeStandardUncertainty: 1.5e-10  
+
+- symbol: "R_∞"  
+  quantity: "Rydberg constant"  
+  formula: "R_∞ = m_e e⁴ / (8ε₀²h³c)"  
+  value: 10973731.568160  
+  relativeStandardUncertainty: 2.1e-12  
+
+- symbol: "a_0"  
+  quantity: "Bohr radius"  
+  formula: "a_0 = 4πε₀ħ² / (m_e e²)"  
+  value: 5.29177210903e-11  
+  relativeStandardUncertainty: 1.5e-10  
+
+- symbol: "k_e"  
+  quantity: "Coulomb constant"  
+  formula: "k_e = 1 / (4πε₀)"  
+  value: 8.9875517923e9  
+  relativeStandardUncertainty: 0  
+
+- symbol: "F"  
+  quantity: "Faraday constant"  
+  formula: "F = N_A e"  
+  value: 96485.33212  
+  relativeStandardUncertainty: 0  
+
+- symbol: "R_k"  
+  quantity: "von Klitzing constant"  
+  formula: "R_k = h / e²"  
+  value: 25812.80745  
+  relativeStandardUncertainty: 0  
+
+- symbol: "μ_B"  
+  quantity: "Bohr magneton"  
+  formula: "μ_B = eħ / (2m_e)"  
+  value: 9.2740100783e-24  
+  relativeStandardUncertainty: 2.6e-10  
+
+- symbol: "μ_N"  
+  quantity: "Nuclear magneton"  
+  formula: "μ_N = eħ / (2m_p)"  
+  value: 5.0507837461e-27  
+  relativeStandardUncertainty: 2.6e-10  
+
+- symbol: "G_0"  
+  quantity: "Conductance quantum"  
+  formula: "G_0 = 2e² / h"  
+  value: 7.748091729e-5  
+  relativeStandardUncertainty: 0  
+
+- symbol: "Φ_0"  
+  quantity: "Magnetic flux quantum"  
+  formula: "Φ_0 = h / (2e)"  
+  value: 2.067833848e-15  
+  relativeStandardUncertainty: 0  
+
+- symbol: "K_J"  
+  quantity: "Josephson constant"  
+  formula: "K_J = 2e / h"  
+  value: 483597.8484e9  
+  relativeStandardUncertainty: 0  
+
+- symbol: "R_∞c"  
+  quantity: "Rydberg constant times speed of light"  
+  formula: "R_∞c = R_∞ * c"  
+  value: 3.2898419602508e15  
+  relativeStandardUncertainty: 2.1e-12  
+
+- symbol: "m_u"  
+  quantity: "Atomic mass constant"  
+  value: 1.66053906660e-27  
+  relativeStandardUncertainty: 3.0e-10  
+
+- symbol: "σ_e"  
+  quantity: "Thomson cross section"  
+  formula: "σ_e = (8π/3) (e² / (4πε₀ m_e c²))²"  
+  value: 6.6524587321e-29  
+  relativeStandardUncertainty: 6.0e-10  
+
+- symbol: "λ_C"  
+  quantity: "Compton wavelength"  
+  formula: "λ_C = h / (m_e c)"  
+  value: 2.42631023867e-12  
+  relativeStandardUncertainty: 6.0e-10  
+
+- symbol: "α²"  
+  quantity: "Square of the fine-structure constant"  
+  formula: "α² = (e² / (4πε₀ħc))²"  
+  value: 5.325136190e-5  
+  relativeStandardUncertainty: 3.0e-10  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of mass"  
+  formula: "E = mc²"  
+  value: 8.9875517923e16  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of frequency"  
+  formula: "E = ħω"  
+  value: 4.135667696e-15  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of momentum"  
+  formula: "E = ħ² / (2m)"  
+  value: 3.161225544e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of angular momentum"  
+  formula: "E = ħ² / (2I)"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of action"  
+  formula: "E = ħ / 2"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of lifetime"  
+  formula: "E = ħ / (2τ)"  
+  value: 3.861592679e-13  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of decay rate"  
+  formula: "E = ħ / (2Γ)"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of energy uncertainty"  
+  formula: "E = ħ / (2ΔE)"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "E"  
+  quantity: "Energy equivalent of momentum uncertainty"  
+  formula: "E = ħ / (2Δp)"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  
+
+- symbol: "ħ"  
+  quantity: "Reduced Planck constant"  
+  formula: "ħ = ħ / (2π)"  
+  value: 1.054571817e-34  
+  relativeStandardUncertainty: 0  

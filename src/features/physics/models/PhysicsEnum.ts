@@ -1,0 +1,16 @@
+export enum SectionType {
+    CONSTANTS = "Constants",
+    MECHANICS = "Mechanics",
+    ELECTRICS = "Electrics",
+    MAGNETICS = "Magnetics",
+    THERMODYNAMICS = "Thermodynamics",
+    OPTICS = "Optics",
+    MODERN_PHYSICS = "Modern Physics",
+    QUANTUM_MECHANICS = "Quantum Mechanics",
+    RELATIVITY = "Relativity",
+    NUCLEAR_PHYSICS = "Nuclear Physics",
+    PARTICLE_PHYSICS = "Particle Physics",
+    ASTROPHYSICS = "Astrophysics",
+    COSMOLOGY = "Cosmology",
+    STRING_THEORY = "String Theory",
+}

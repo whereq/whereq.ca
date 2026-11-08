@@ -1,0 +1,44 @@
+.authorization-tab {
+    display: flex;
+    height: 100%;
+}
+
+.auth-type-selector {
+    width: 33.33%;
+    padding: 16px;
+    border-right: 1px solid #e5e7eb; /* Light gray border */
+    text-align: left;
+}
+
+.auth-inputs-container {
+    width: 66.67%;
+    padding: 16px;
+    text-align: left;
+    overflow-y: auto;
+    max-height: calc(100% - 8px); /* Account for padding */
+}
+
+.auth-inputs input {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #d1d5db; /* Light gray border */
+    border-radius: 4px;
+}
+
+
+/* API Key Auth */
+.api-key-auth input,
+.api-key-auth select {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #d1d5db; /* Light gray border */
+    border-radius: 4px;
+}
+
+.api-key-auth select {
+    margin-bottom: 0;
+}

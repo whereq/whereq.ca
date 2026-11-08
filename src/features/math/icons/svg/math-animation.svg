@@ -1,0 +1,25 @@
+<svg 
+    width="100" 
+    height="100" 
+    viewBox="0 0 100 100" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg">
+    
+    <!-- Background (Tailwind orange-300) -->
+    <rect x="0" y="0" width="100" height="100" fill="#fcd34d" rx="8"/>
+    
+    <!-- X and Y Axes (Tailwind gray-800) -->
+    <line x1="10" y1="50" x2="90" y2="50" stroke="#1f2937" stroke-width="2"/>
+    <line x1="50" y1="10" x2="50" y2="90" stroke="#1f2937" stroke-width="2"/>
+    
+    <!-- Function Graph (Quadratic y = x^2) (Tailwind gray-800) -->
+    <path d="M 10 80 Q 50 10, 90 80" stroke="#1f2937" stroke-width="2" fill="none"/>
+    
+    <!-- Math Symbols (Tailwind gray-800) -->
+    <text x="12" y="22" font-size="16" fill="#1f2937" font-family="Fira Code, monospace">∑</text>
+    <text x="28" y="22" font-size="16" fill="#1f2937" font-family="Fira Code, monospace">π</text>
+    <text x="72" y="22" font-size="16" fill="#1f2937" font-family="Fira Code, monospace">√x</text>
+    
+    <!-- Equation (Tailwind gray-800) -->
+    <text x="15" y="92" font-size="14" fill="#1f2937" font-family="Fira Code, monospace">f(x) = x²</text>
+</svg>

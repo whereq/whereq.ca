@@ -1,0 +1,50 @@
+.settings-tab {
+    padding: 0; /* Removed padding around the tab */
+    margin: 0; /* Ensure no extra margin is applied */
+}
+
+.settings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0; /* Ensure no margin around the table */
+    box-sizing: border-box; /* Ensure padding doesn't affect table width */
+}
+
+.settings-table td {
+    border: 1px solid #d1d5db;
+    padding: 0 4px; /* Removed padding to align input boxes */
+    text-align: left;
+    height: 30px; /* Reduced row height */
+}
+
+.settings-table td input[type="text"] {
+    width: 100%;
+    height: 100%;
+    border: none; /* Remove default input borders */
+    font-size: 0.75rem;
+    /* padding: 0 4px; Adjust padding inside the input box */
+    box-sizing: border-box; /* Ensure no overflow */
+    outline: none; /* Remove focus outline */
+    background: transparent; /* Match the table cell background */
+}
+
+.settings-table td input[type="text"]:focus {
+    border: 1px solid #2563eb; /* Add a focus border for better usability */
+    background: #f1f5f9; /* Highlight the focused input */
+}
+
+.settings-table td:first-child {
+    width: 40%;
+}
+
+.settings-table td:nth-child(2) {
+    width: 60%;
+}
+
+.toggle-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    transform: scale(0.8); /* Reduced size of the button */ 
+}

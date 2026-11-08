@@ -1,0 +1,740 @@
+- name: Animal
+  categories:
+    - name: Cat Information
+      restfulEndpointGroups:
+        - name: Cat Fact Ninja
+          restfulEndpoints:
+            - title: Cat Breeds
+              url: https://catfact.ninja/breeds
+              method: GET
+              params:
+                limit: "10"
+              headers:
+                Content-Type: application/json
+              tags: [Animal, Cat]
+              categories: [Animal, Cat]
+            - title: Cat Facts
+              url: https://catfact.ninja/facts
+              method: GET
+              params:
+                max_length: ""
+                limit: "10"
+              headers:
+                Content-Type: application/json
+              tags: [Cat, Animal]
+              categories: [Animal, Cat]
+    - name: Dog Information
+      restfulEndpointGroups:
+        - name: Dog Breeds
+          restfulEndpoints:
+            - title: Dog Breeds
+              url: https://dog.ceo/api/breeds/list/all
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Dog, Animal]
+              categories: [Animal, Dog]
+- name: Animation
+  categories:
+    - name: Ghibli Studio
+      restfulEndpointGroups:
+        - name: Ghibli Endpoints
+          restfulEndpoints:
+            - title: Films
+              url: https://ghibli.rest/films
+              method: GET
+              params: {}
+              headers:
+                Content-Type: application/json
+              tags: [films, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Film
+              url: https://ghibli.rest/films
+              method: GET
+              params:
+                id: d6bd6efc-37b2-4c40-b092-367cea8c88fe
+              headers:
+                Content-Type: application/json
+              tags: [film, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Locations
+              url: https://ghibli.rest/locations
+              method: GET
+              params: {}
+              headers:
+                Content-Type: application/json
+              tags: [locations, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Location
+              url: https://ghibli.rest/locations
+              method: GET
+              params:
+                id: 11014596-71b0-4b3e-b8c0-1c4b15f28b9a
+              headers:
+                Content-Type: application/json
+              tags: [location, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: People
+              url: https://ghibli.rest/people
+              method: GET
+              params: {}
+              headers:
+                Content-Type: application/json
+              tags: [people, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: People by ID
+              url: https://ghibli.rest/locations
+              method: GET
+              params:
+                id: 267649ac-fb1b-11eb-9a03-0242ac130003
+              headers:
+                Content-Type: application/json
+              tags: [people, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Species
+              url: https://ghibli.rest/species
+              method: GET
+              params: {}
+              headers:
+                Content-Type: application/json
+              tags: [species, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Species by ID
+              url: https://ghibli.rest/species
+              method: GET
+              params:
+                id: af3910a6-429f-4c74-9ad5-dfe1c4aa04f2
+              headers:
+                Content-Type: application/json
+              tags: [species, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Vehicles
+              url: https://ghibli.rest/vehicles
+              method: GET
+              params: {}
+              headers:
+                Content-Type: application/json
+              tags: [vehicles, animation]
+              categories: [Animation, Ghibli Studio]
+            - title: Vehicle
+              url: https://ghibli.rest/vehicles
+              method: GET
+              params:
+                id: 4e09b023-f650-4747-9ab9-eacf14540cfb
+              headers:
+                Content-Type: application/json
+              tags: [vehicle, animation]
+              categories: [Animation, Ghibli Studio]
+- name: Cars
+  categories:
+    - name: NHTSA 
+      restfulEndpointGroups:
+        - name: VIN Decoding
+          restfulEndpoints:
+            - title: Decode VIN
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}
+              method: GET
+              params: 
+                vin: 5GAKRDED0CJ396612
+                format: json
+                modelyear: 2011
+              headers:
+                Content-Type: application/json
+              tags: [VIN]
+              categories: [VIN]
+            - title: Decode VIN (flat format)
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                vin: 5GAKRDED0CJ396612
+                format: json
+                modelyear: 2011
+              tags: [VIN]
+              categories: [VIN]
+            - title: Decode VIN Extended
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/{vin}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                vin: 5GAKRDED0CJ396612
+                format: json
+                modelyear: 2011
+              tags: [VIN]
+              categories: [VIN]
+            - title: Decode VIN Extended (flat format)
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/{vin}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                vin: 5GAKRDED0CJ396612
+                format: json
+                modelyear: 2011
+              tags: [VIN]
+              categories: [VIN]
+        - name: WMI Decoding
+          restfulEndpoints:
+            - title: Decode WMI
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/DecodeWMI/{wmi}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                wmi: 1FD
+                format: json
+              tags: [WMI]
+              categories: [WMI]
+            - title: Get WMIs for Manufacturer
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetWMIsForManufacturer/{manufacturer}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                manufacturer: mercedes
+                format: json
+                vehicleType: car
+              tags: [Manufacturer]
+              categories: [Manufacturer]
+        - name: Make
+          restfulEndpoints:
+            - title: Get All Makes
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                format: json
+              tags: [Makes]
+              categories: [Makes]
+            - title: Get All Manufacturers
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetAllManufacturers
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                format: json
+                page: 2
+                ManufacturerType: Intermediate
+              tags: [Manufacturers]
+              categories: [Manufacturers]
+            - title: Get Manufacturer Details
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetManufacturerDetails/{manufacturer}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                manufacturer: mercedes
+                format: json
+                page: 2
+              tags: [Manufacturer]
+              categories: [Manufacturer]
+            - title: Get Makes for Manufacturer by Name
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetMakeForManufacturer/{manufacturer}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                manufacturer: mercedes
+                format: json
+              tags: [Makes]
+              categories: [Makes]
+            - title: Get Makes for Manufacturer by Name and Year
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForManufacturerAndYear/{manufacturer}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                manufacturer: mercedes
+                year: 2013
+                format: json
+              tags: [Makes]
+              categories: [Makes]
+            - title: Get Makes for Vehicle Type 
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/{vehicleType}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                vehicleType: car
+                format: json
+              tags: [VehicleType]
+              categories: [VehicleType]
+        - name: Model Information
+          restfulEndpoints:
+            - title: Get Models for Make
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/{make}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                make: mercedes
+                format: json
+              tags: [Models]
+              categories: [Models]
+            - title: Get Models for MakeId
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeId/{makeId}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                makeId: 450
+                format: json
+              tags: [Models]
+              categories: [Models]
+            - title: Get Models for Make 
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/{make}/modelyear/{year}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                make: mercedes
+                year: 2013
+                format: json
+              tags: [Models]
+              categories: [Models]
+            - title: Get Models for Make Id 
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeIdYear/makeId/{makeId}/modelyear/{year}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                makeId: 450
+                year: 2013
+                format: json
+              tags: [Models]
+              categories: [Models]
+        - name: Car Information
+          restfulEndpoints:
+            - title: Get Vehicle Types for Make 
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetVehicleTypesForMake/{make}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                make: mercedes
+                format: json
+              tags: [VehicleType]
+              categories: [VehicleType]
+            - title: Get Vehicle Types for Make by Id
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetVehicleTypesForMakeId/{makeId}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                makeId: 450
+                format: json
+              tags: [VehicleType]
+              categories: [VehicleType]
+            - title: Get Parts
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetParts
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                type: 565
+                fromDate: 1/1/2015
+                toDate: 5/5/2015
+                format: json
+                page: 1
+                manufacturer: hon
+              tags: [Parts]
+              categories: [Parts]
+            - title: Get Equipment Plant Codes
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetEquipmentPlantCodes/{year}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                year: 2013
+                format: json
+              tags: [Equipment]
+              categories: [Equipment]
+            - title: Get Vehicle Variables List
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetVehicleVariableList
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                format: json
+              tags: [Variables]
+              categories: [Variables]
+            - title: Get Vehicle Variable Values List
+              url: https://vpic.nhtsa.dot.gov/api/vehicles/GetVehicleVariableValuesList/{variable}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                variable: 101
+                format: json
+              tags: [Variables]
+              categories: [Variables]
+- name: Cryptocurrency
+  categories: 
+    - name: Bitcoin
+      restfulEndpointGroups:
+        - name: Bitcoin Information
+          restfulEndpoints:
+            - title: Bitcoin Price
+              url: https://api.coindesk.com/v1/bpi/currentprice.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Bitcoin, Cryptocurrency]
+              categories: [Cryptocurrency, Bitcoin]
+            - title: Bitcoin Price in EUR
+              url: https://api.coindesk.com/v1/bpi/currentprice/EUR.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Bitcoin, Cryptocurrency]
+              categories: [Cryptocurrency, Bitcoin]
+            - title: Bitcoin Price in GBP
+              url: https://api.coindesk.com/v1/bpi/currentprice/GBP.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Bitcoin, Cryptocurrency]
+              categories: [Cryptocurrency, Bitcoin]
+            - title: Bitcoin Price in USD
+              url: https://api.coindesk.com/v1/bpi/currentprice/USD.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Bitcoin, Cryptocurrency]
+              categories: [Cryptocurrency, Bitcoin]
+    - name: Ethereum
+      restfulEndpointGroups:
+        - name: Ethereum Information
+          restfulEndpoints:
+            - title: Ethereum Price
+              url: https://api.coindesk.com/v1/bpi/currentprice/ETH.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Ethereum, Cryptocurrency]
+              categories: [Cryptocurrency, Ethereum]
+            - title: Ethereum Price in EUR
+              url: https://api.coindesk.com/v1/bpi/currentprice/ETH/EUR.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Ethereum, Cryptocurrency]
+              categories: [Cryptocurrency, Ethereum]
+            - title: Ethereum Price in GBP
+              url: https://api.coindesk.com/v1/bpi/currentprice/ETH/GBP.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Ethereum, Cryptocurrency]
+              categories: [Cryptocurrency, Ethereum]
+            - title: Ethereum Price in USD
+              url: https
+    - name: Ticker
+      restfulEndpointGroups:
+        - name: Ticker Information
+          restfulEndpoints:
+            - title: Simple Ticker 
+              url: https://api.cryptonator.com/api/ticker/btc-usd
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Ticker, Cryptocurrency]
+              categories: [Cryptocurrency, Ticker]
+            - title: Complete Ticker 
+              url: https://api.cryptonator.com/api/full/btc-usd
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Ticker, Cryptocurrency]
+              categories: [Cryptocurrency, Ticker]
+- name: Music
+  categories:
+    - name: Lyrics
+      restfulEndpointGroups:
+        - name: Lyrics Information
+          restfulEndpoints:
+            - title: Lyrics
+              url: https://api.lyrics.ovh/v1/{artist}/{title}
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                artist: "beatles"
+                title: "Let it be"
+              tags: [Lyrics, Music]
+              categories: [Music, Lyrics]
+- name: STEM
+  categories:
+    - name: Science
+      restfulEndpointGroups:
+        - name: USGS
+          restfulEndpoints:
+            - title: Earthquakes
+              url: https://earthquake.usgs.gov/fdsnws/event/1/query
+              method: GET
+              params:
+                format: geojson
+                starttime: "2021-08-01"
+                endtime: "2021-08-07"
+                minmagnitude: 4
+              headers:
+                Content-Type: application/json
+              tags: [Earthquakes]
+              categories: [Earthquakes]
+        - name: Sun
+          restfulEndpoints:
+            - title: Solar Eclipses
+              url: https://api.le-systeme-solaire.net/rest/bodies/sun/eclipses
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Sun]
+              categories: [Sun]
+            - title: Sunrise and Sunset
+              url: https://api.sunrise-sunset.org/json
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                lat: 36.7201600
+                lng: -4.4203400
+              tags: [Sun]
+              categories: [Sun]
+    - name: Technology
+      restfulEndpointGroups:
+        - name: Open Notify
+          restfulEndpoints:
+            - title: ISS Location
+              url: http://api.open-notify.org/iss-now.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [ISS]
+              categories: [ISS]
+            - title: ISS Pass Times
+              url: http://api.open-notify.org/iss-pass.json
+              method: GET
+              params:
+                lat: 45.0
+                lon: -122.3
+              headers:
+                Content-Type: application/json
+              tags: [ISS]
+              categories: [ISS]
+            - title: People in Space
+              url: http://api.open-notify.org/astros.json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [ISS]
+              categories: [ISS]
+    - name: Engineering
+      restfulEndpointGroups:
+        - name: NASA
+          restfulEndpoints:
+            - title: APOD
+              url: https://api.nasa.gov/planetary/apod
+              method: GET
+              params:
+                api_key: DEMO_KEY
+              headers:
+                Content-Type: application/json
+              tags: [NASA, APOD]
+              categories: [NASA, APOD]
+            - title: Asteroids
+              url: https://api.nasa.gov/neo/rest/v1/feed
+              method: GET
+              params:
+                start_date: 2021-08-01
+                end_date: 2021-08-07
+                api_key: DEMO_KEY
+              headers:
+                Content-Type: application/json
+              tags: [NASA, Asteroids]
+              categories: [NASA, Asteroids]
+            - title: Earth
+              url: https://api.nasa.gov/planetary/earth/imagery
+              method: GET
+              params:
+                lon: 100.75
+                lat: 1.5
+                date: 2014-02-01
+                dim: 0.15
+                api_key: DEMO_KEY
+              headers:
+                Content-Type: application/json
+              tags: [NASA, Earth]
+              categories: [NASA, Earth]
+            - title: Mars Rover Photos
+              url: https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos
+              method: GET
+              params:
+                sol: 1000
+                camera: fhaz
+                api_key: DEMO_KEY
+              headers:
+                Content-Type: application/json
+              tags: [NASA, Mars]
+              categories: [NASA, Mars]
+            - title: Mars Weather
+              url: https://api.nasa.gov/insight_weather
+              method: GET
+              params:
+                api_key: DEMO_KEY
+              headers:
+                Content-Type: application/json
+              tags: [NASA, Weather]
+              categories: [NASA, Weather]
+            - title: Techport
+              url: https://api.nasa.gov/techport/api/projects
+              method: GET
+              params:
+                api_key: DEMO_KEY
+              headers:
+                Content-Type: application/json
+              tags: [NASA, Techport]
+              categories: [NASA, Techport]
+        - name: SpaceX
+          restfulEndpoints:
+            - title: Latest Launches
+              url: https://api.spacexdata.com/v5/launches/latest
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [SpaceX]
+              categories: [SpaceX]
+    - name: Mathematics
+      restfulEndpointGroups:
+        - name: Math
+          restfulEndpoints:
+            - title: Random Math Fact
+              url: http://numbersapi.com/random/math
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Math]
+              categories: [Math]
+            - title: Math Fact
+              url: http://numbersapi.com/42/math
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Math]
+              categories: [Math]
+- name: Google 
+  categories:
+    - name: Maps
+      restfulEndpointGroups:
+        - name: Geocode
+          restfulEndpoints:
+            - title: Get Geocode by Address or Lat/Lng
+              url: https://maps.googleapis.com/maps/api/geocode/json
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                address: "1600 Amphitheatre Parkway, Mountain View, CA"
+                latlng: "37.4219999,-122.0840575"
+                key: "YOUR_API_KEY"
+              tags: [Geocode, GoogleMaps]
+              categories: [Google Maps, Geocode]
+- name: Tools
+  categories:
+    - name: IP Address
+      restfulEndpointGroups:
+        - name: IP Address Information
+          restfulEndpoints:
+            - title: IP Address Information
+              url: https://ipinfo.io/{ip}/json
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                ip: 170.151.163.193
+- name: Entertainment
+  categories:
+    - name: TVMaze
+      restfulEndpointGroups:
+        - name: TVMaze Information
+          restfulEndpoints:
+            - title: Show Search
+              url: https://api.tvmaze.com/search/shows
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                q: transformers
+    - name: Jokes
+      restfulEndpointGroups:
+        - name: Jokes Information
+          restfulEndpoints:
+            - title: Jokes
+              url: https://official-joke-api.appspot.com/jokes/programming/random
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Jokes]
+              categories: [Jokes]
+            - title: Random Jokes
+              url: https://official-joke-api.appspot.com/jokes/random
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Jokes]
+              categories: [Jokes]
+    - name: Quotes
+      restfulEndpointGroups:
+        - name: Quotes Information
+          restfulEndpoints:
+            - title: Quotes
+              url: https://api.quotable.io/random
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Quotes]
+              categories: [Quotes]
+            - title: Random Quotes
+              url: https://api.quotable.io/random
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Quotes]
+              categories: [Quotes]
+    - name: Trivia
+      restfulEndpointGroups:
+        - name: Trivia Information
+          restfulEndpoints:
+            - title: Trivia
+              url: https://opentdb.com/api.php
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                amount: 10
+              tags: [Trivia]
+              categories: [Trivia]
+            - title: Random Trivia
+              url: https://opentdb.com/api.php
+              method: GET
+              headers:
+                Content-Type: application/json
+              params:
+                amount: 10
+              tags: [Trivia]
+              categories: [Trivia]
+- name: Others
+  categories:
+    - name: Uncategorized
+      restfulEndpointGroups:
+        - name: My IP Address
+          restfulEndpoints:
+            - title: My IP Address
+              url: https://api.ipify.org/?format=json
+              method: GET
+              headers:
+                Content-Type: application/json
+              tags: [Utility, Others]
+              categories: [Others, Utility]

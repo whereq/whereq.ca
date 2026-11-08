@@ -1,0 +1,34 @@
+.body-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Full height */
+}
+
+.radio-group {
+    display: flex;
+    gap: 16px; /* Space between options */
+    padding: 8px;
+    background-color: #f3f4f6; /* Light gray */
+    border-bottom: 1px solid #d1d5db; /* Divider */
+    align-items: center;
+    flex-shrink: 0; /* Fixed height */
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #374151; /* Darker gray */
+}
+
+.radio-group input[type="radio"] {
+    accent-color: #3b82f6; /* Blue accent */
+}
+
+.content-panel {
+    flex-grow: 1; /* Takes up remaining space */
+    padding: 16px;
+    overflow-y: auto; /* Adds scroll bar if content overflows */
+    background-color: #ffffff;
+}
