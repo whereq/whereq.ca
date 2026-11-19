@@ -37,6 +37,7 @@ const MapTools : React.FC = () => {
         saveButtonInMapToolEnabled, 
         addToMapOverlayArrayOnMap,
         setClickedOverlay,
+        drawingUnavailable,
     } = useOverlayStore();
 
     // Memoize the callback to avoid unnecessary re-renders
@@ -144,8 +145,9 @@ const MapTools : React.FC = () => {
                 ].map(({ option, icon, label }) => (
                     <button
                         key={option}
+                        disabled={drawingUnavailable}
                         className={`p-1 rounded ${activeTool === option ? "bg-orange-500 text-white" : "bg-gray-700"
-                            } hover:bg-gray-600`}
+                            } ${drawingUnavailable ? "cursor-not-allowed opacity-50" : "hover:bg-gray-600"}`}
                         onClick={() => handleDrawingOptionClick(option)}
                     >
                         <FontAwesomeIcon icon={icon} title={label} />
@@ -216,6 +218,11 @@ const MapTools : React.FC = () => {
                     <FontAwesomeIcon icon={faCamera} title="Capture Map" />
                 </button>
             </div>
+            {drawingUnavailable && (
+                <div className="bg-gray-900 text-orange-300 text-xs px-2 py-1 rounded shadow">
+                    Drawing tools are unavailable right now. Try again in a moment.
+                </div>
+            )}
         </div>
     );
 };

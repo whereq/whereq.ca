@@ -166,6 +166,14 @@ export interface OverlayStore {
     setDrawingBarActive: (active: boolean) => void;
     setOverlayModalMode: (mode: OverlayModalMode | null) => void;
     setMapShapeType: (shapeType: MapShapeType | null) => void; // Add setter for mapShapeType
+    /**
+     * True when the drawing tools could not be started (for example because
+     * the Google Maps API rejected the request). The toolbar greys the shape
+     * buttons out and shows a short notice instead of letting the failure
+     * take down the app.
+     */
+    drawingUnavailable: boolean;
+    setDrawingUnavailable: (unavailable: boolean) => void;
 
     mapOverlayArrayOnMap: MapOverlay[];
     setMapOverlayArrayOnMap: (overlayArray: MapOverlay[] | ((prev: MapOverlay[]) => MapOverlay[])) => void;
@@ -217,6 +225,8 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
     setMapShapeType: (shapeType) => set({ mapShapeType: shapeType }), // Setter for mapShapeType
     overlayModalMode: null,
     setOverlayModalMode: (mode: OverlayModalMode | null) => set({ overlayModalMode: mode }),
+    drawingUnavailable: false,
+    setDrawingUnavailable: (unavailable) => set({ drawingUnavailable: unavailable }),
 
     mapOverlayArrayOnMap: [],
     setMapOverlayArrayOnMap: (overlayArray) => set((state) => ({

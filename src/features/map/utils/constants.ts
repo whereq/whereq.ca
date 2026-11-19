@@ -29,6 +29,16 @@ export const MAP_DRAWING_COLOR = {
     HIGHLIGHT_FILL_COLOR: "#FFA50080",
 }
 
+// Style of the rubber-band preview shown while a shape is being drawn.
+export const MAP_DRAWING_PREVIEW = {
+    STROKE_COLOR: "#FFA500",
+    FILL_COLOR: "#FFA50033",
+    STROKE_WEIGHT: 2,
+    FILL_OPACITY: 0.2,
+    CLICKABLE: false,
+    EDITABLE: false,
+}
+
 // Settings
 export const API_KEY = "API Key";
 export const GOOGLE_MAP_ID = "Google Map ID";
