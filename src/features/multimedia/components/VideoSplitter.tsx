@@ -60,7 +60,7 @@ import CustomModal from "@/components/modals/CustomModal";
  * FFmpeg.wasm uses SharedArrayBuffer, which requires the page to be
  * served with:
  *   Cross-Origin-Opener-Policy: same-origin
- *   Cross-Origin-Embedder-Policy: require-corp
+ *   Cross-Origin-Embedder-Policy: credentialless
  * Vite's dev server sets these by default (see vite.config.ts). For
  * production, your hosting (flowdesk.top / whereq.com) needs to send
  * those headers — see https://web.dev/articles/coop-coep. The page

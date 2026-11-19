@@ -429,7 +429,7 @@ export function useFfmpegEngine(): FfmpegEngine {
 - `subscribeStatus` fires `currentStatus` once immediately (so the consumer doesn't have to wait for a transition to see the real status) and on every subsequent change.
 
 ### 2.6 Vite config — does it affect ffmpeg?
-The onnxruntime-web subpath aliases in `vite.config.ts` (`"onnxruntime-web/webgpu" → "onnxruntime-web"`, same for `webgl`/`cpu`) are **only for `@imgly/background-removal`**. FFmpeg.wasm doesn't touch onnxruntime-web at all. The COOP/COEP headers (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`, `Cross-Origin-Resource-Policy: cross-origin`) ARE shared between them — both libs require `SharedArrayBuffer`. The `worker: { format: "es" }` setting affects Vite's bundling of all web workers (including the `@ffmpeg/ffmpeg` core worker).
+The onnxruntime-web subpath aliases in `vite.config.ts` (`"onnxruntime-web/webgpu" → "onnxruntime-web"`, same for `webgl`/`cpu`) are **only for `@imgly/background-removal`**. FFmpeg.wasm doesn't touch onnxruntime-web at all. The COOP/COEP headers (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`, `Cross-Origin-Resource-Policy: cross-origin`) ARE shared between them — both libs require `SharedArrayBuffer`. The `worker: { format: "es" }` setting affects Vite's bundling of all web workers (including the `@ffmpeg/ffmpeg` core worker).
 
 ---
 
@@ -711,7 +711,7 @@ Memory note: never use the browser's native dialogs. The `CustomModal` is the ca
 ### 6.1 SharedArrayBuffer → COOP/COEP
 FFmpeg.wasm requires `SharedArrayBuffer`, which the browser only exposes in a cross-origin-isolated context. The page must send:
 - `Cross-Origin-Opener-Policy: same-origin`
-- `Cross-Origin-Embedder-Policy: require-corp`
+- `Cross-Origin-Embedder-Policy: credentialless`
 - `Cross-Origin-Resource-Policy: cross-origin`
 
 These are set in **two places that must stay in sync**:

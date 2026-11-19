@@ -10,8 +10,8 @@ import {
     faMap,
     faTreeCity,
 } from "@fortawesome/free-solid-svg-icons";
-import LocalStorageHelper from "@/utils/localStorageHelper";
-import { BASE_KEY, GOOGLE_MAP_ID } from "@/features/map-gl/utils/constants";
+import { BASE_KEY } from "@/features/map-gl/utils/constants";
+import { readGoogleMapCredentials } from "@/features/map/utils/mapCredentials";
 import PlaceInfoModal from "@/features/map-gl/components/PlaceInfoModal";
 import CustomModal from "@/components/modals/CustomModal"; // Import the CustomModal component
 import { MAP_EVENT } from "@/features/map/utils/constants";
@@ -96,7 +96,8 @@ const Maps: React.FC = () => {
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null);
     const [infoWindowContent, setInfoWindowContent] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [googleMapId, setGoogleMapId] = useState<string>("");
+    const [googleMapId] = useState(() => readGoogleMapCredentials(BASE_KEY).mapId);
+    const [googleMapApiKey] = useState(() => readGoogleMapCredentials(BASE_KEY).apiKey);
     const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(center);
     const [mapZoom, setMapZoom] = useState<number>(12);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false); // State for the search modal
@@ -171,20 +172,11 @@ const Maps: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        const savedSettings = LocalStorageHelper.loadSetting(BASE_KEY);
-        if (savedSettings && savedSettings[GOOGLE_MAP_ID]) {
-            setGoogleMapId(savedSettings[GOOGLE_MAP_ID]);
-        } else {
-            console.warn("Google Map ID not found in local storage.");
-        }
-    }, []);
-
     return (
-        <APIProvider apiKey={googleMapId} libraries={["places"]}>
+        <APIProvider apiKey={googleMapApiKey} libraries={["places"]}>
             <div style={{ height: "100%", width: "100%" }}>
                 <Map
-                    mapId={googleMapId}
+                    mapId={googleMapId || undefined}
                     center={mapCenter}
                     zoom={mapZoom}
                     mapTypeId={mapType}
