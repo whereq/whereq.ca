@@ -21,6 +21,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+
+    /* TypeScript 6 no longer auto-includes every `@types/*` package, so the
+       global `google.maps` namespace has to be requested explicitly. Without
+       this, every `google.maps.*` reference fails to compile. */
+    "types": ["google.maps"],
     "paths": {
       "@/*": ["./src/*"],
     },

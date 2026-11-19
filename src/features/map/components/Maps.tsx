@@ -3,7 +3,7 @@ import { Map, useMap } from "@vis.gl/react-google-maps";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMap, faTreeCity } from "@fortawesome/free-solid-svg-icons";
 import { MAP_CENTER, } from "@/features/map/utils/constants";
-import MapDrawingManager from "@/features/map/utils/MapDrawingManager";
+import MapDrawingController from "@/features/map/utils/MapDrawingController";
 import MapTools from "@/features/map/components/MapTools";
 import OverlayModal from "@/features/map/components/OverlayModal";
 import { MapToolMode, OverlayModalMode } from "@/features/map/models/MapEnum";
@@ -130,7 +130,7 @@ const MapInner: React.FC<{
             </button>
 
             <MapTools />
-            <MapDrawingManager mapRef={mapRef} />
+            <MapDrawingController />
         </>
     );
 };

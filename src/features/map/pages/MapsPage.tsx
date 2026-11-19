@@ -46,7 +46,7 @@ const MapsPage = () => {
                 <div
                     className="flex-1 bg-gray-800 text-orange-300 h-full"
                 >
-                    <APIProvider apiKey={googleMapApiKey} libraries={["places", "drawing", "marker"]}>
+                    <APIProvider apiKey={googleMapApiKey} libraries={["places", "marker", "geometry"]}>
                         <Maps />
                     </APIProvider>
                 </div>
