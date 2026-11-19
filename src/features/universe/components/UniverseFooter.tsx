@@ -15,6 +15,7 @@ const FOOTER_LINKS: FooterLink[] = [
   { label: "WhereQ Cloud — HOW", href: "https://whereq.cloud", external: true },
   { label: "WhereQ.cc — HOW", href: "https://whereq.cc", external: true },
   { label: "QHaul — HOW", href: "https://qhaul.ca", external: true },
+  { label: "WhereQ-DOSBox — HOW", href: "https://github.com/whereq/whereq-dosbox", external: true },
   { label: "whereq.github.io — WHAT", href: "https://whereq.github.io", external: true },
 ];
 

@@ -75,7 +75,7 @@ export function PlanetGalaxy({ onSelect }: PlanetGalaxyProps) {
       viewBox={`0 0 ${W} ${H}`}
       className={clsx("galaxy-svg", focus && "has-focus")}
       role="img"
-      aria-label="Interactive map of the WhereQ Universe: five foundational planets (Where, Who, When, Why, What) and an outer ring of products and platforms (FlowDesk, CCBus, CatoBigato, WhereQ Cloud, WhereQ.cc, QHaul) connected by dependency lines."
+      aria-label="Interactive map of the WhereQ Universe: five foundational planets (Where, Who, When, Why, What) and an outer ring of products and platforms (FlowDesk, CCBus, CatoBigato, WhereQ Cloud, WhereQ.cc, QHaul, WhereQ-DOSBox) connected by dependency lines."
     >
       <defs>
         {UNIVERSE.planets.map((p) => (

@@ -14,7 +14,7 @@ The single hardest non-negotiable design contract is the **COOP/COEP/CORP header
 yarn dev      # vite dev server on :5173 with HMR + COOP/COEP headers
 yarn build    # production bundle to ./dist/ (~66 MB; ~500 kB chunk warning is expected)
 yarn preview  # serves ./dist/ on :4173 with prod headers — use to smoke-test before deploy
-yarn lint     # eslint flat config; 0 errors required, baseline ~24 warnings is acceptable
+yarn lint     # eslint flat config; 0 errors required, baseline ~32 warnings is acceptable
 npx tsc -p tsconfig.app.json --noEmit   # type-check without building
 npx tsc -p tsconfig.node.json --noEmit  # type-check the vite config
 bin/release.sh --message "…"            # release: gates → commit → tag → push main (Vercel deploys)
@@ -54,8 +54,8 @@ Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon v
 ## Heavy local-feature engines
 
 - **FFmpeg.wasm** (`@ffmpeg/ffmpeg@0.12`) — shared singleton via `src/features/multimedia/hooks/useFfmpegEngine.ts` (module-level instance + React mirror via pub/sub). Multiple components can read the same `ffmpegInstance` reference. Tries local `public/ffmpeg-core/` first, falls back to unpkg. Each consumer wires its own `ffmpeg.on("progress", ...)` per `useEffect`. Requires `SharedArrayBuffer` (the COOP/COEP reason).
-- **Pyodide** (`pyodide@0.29.3`) — singleton in `src/features/tools/components/CodeFormatter.tsx` with `pyodideInitPromise`. Bumps `setMaxListeners(50)` to survive React StrictMode double-mount. Loads from jsdelivr CDN.
-- **ONNX Runtime Web** (via `@imgly/background-removal@1.5.8`) — background-removal tool. The onnxruntime-web subpath aliases in `vite.config.ts` (`webgpu`/`cpu` → default) are because the subpaths aren't in the package's `exports` field. WASM/WebGL auto-detected at runtime.
+- **Pyodide** (`pyodide@314.0.8`) — singleton in `src/features/tools/components/CodeFormatter.tsx` with `pyodideInitPromise`. Bumps `setMaxListeners(50)` to survive React StrictMode double-mount. Loads from jsdelivr CDN; the CDN version string is a hardcoded `PYODIDE_VERSION` constant that must track the package version.
+- **ONNX Runtime Web** (via `@imgly/background-removal@1.7.0`) — background-removal tool. The onnxruntime-web subpath aliases in `vite.config.ts` (`webgpu`/`cpu` → default) are because the subpaths aren't in the package's `exports` field. WASM/WebGL auto-detected at runtime.
 - **gif.js + gifuct-js** — encoder + decoder for GIF tooling (no TS types, lots of `// @ts-expect-error`).
 - **MathJax** — module singleton in `src/utils/mathJaxSetup.ts` (TeX input + SVG output), reused by `math/` and `physics/`.
 
@@ -68,8 +68,13 @@ Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon v
 - **Always pair `URL.createObjectURL` with `revokeObjectURL`** in unmount cleanup. Blob URLs leak across hot reloads.
 - **The standard 3.125rem bar height** in `ShellLayout` is duplicated as a magic number in 3 places (Header height, Footer height, main `height: calc(100vh - 6.25rem)`). Changing bar height requires editing all three.
 - **Tailwind v3 config + Tailwind v4 plugin coexist**. The `@theme` block in `src/index.css` is the runtime source of truth; `tailwind.config.js` is mostly dormant.
-- **`react-ace@14` quirk**: published CJS; Vite's CJS→ESM transform makes `import X from "react-ace"` return the whole `module.exports` object. The component is `mod.default.default`. See `CodeFormatter.tsx` for the unwrap.
+- **`react-ace@15` quirk**: published CJS; Vite's CJS→ESM transform makes `import X from "react-ace"` return the whole `module.exports` object. The component is `mod.default.default`. See `CodeFormatter.tsx` for the unwrap.
 - **`as any` casts** in `AudioVideoMerger.handleMerge` carry inline `// eslint-disable-next-line` comments — required because @ffmpeg/ffmpeg v0.12's types are wrong.
+- **`ffmpeg.readFile` returns `Uint8Array | string`** — narrow the `string` case before building a `Blob` (see `AudioVideoMerger`, `VideoSplitter`, `GifMaker`).
+- **TypeScript 6 does not auto-include `@types/*` packages** — `google.maps` needs `/// <reference types="google.maps" />` in `src/types/google-maps-drawing.d.ts`. The legacy `@types/googlemaps` package must NOT be installed alongside `@types/google.maps` (they collide on the same global namespace).
+- **The Google Maps Drawing library is deprecated upstream** — the local type augmentation in `src/types/google-maps-drawing.d.ts` keeps `tsc` happy, but the runtime call will break once Google serves an API without it.
+- **react-day-picker v10 renamed its CSS classes** (`nav_button` → `button_previous`/`button_next`, `caption` → `month_caption`, `day_today` → `today`, `day_selected` → `selected`). The `*DP` calendar path is currently commented out in `CalendarPage.tsx`.
+- **js-yaml v5** uses YAML 1.2 named exports (`import { load as loadYaml } from "js-yaml"`) and parses timestamps as **strings**, not `Date`.
 
 ## Auth / network
 

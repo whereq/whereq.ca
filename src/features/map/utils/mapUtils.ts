@@ -32,7 +32,13 @@ export const mapDrawingModeToOverlayType =
 export const createDrawingManager = (
   mapShapeType: MapShapeType,
 ): google.maps.drawing.DrawingManager => {
-  return new google.maps.drawing.DrawingManager({
+  // The upstream @types/google.maps declares DrawingManager without a
+  // constructor (Google deprecated the Drawing library in API v3.65), so the
+  // class is cast to its deprecated constructor signature. The runtime
+  // behaviour is unchanged — see src/types/google-maps-drawing.d.ts.
+  const DrawingManagerCtor =
+    google.maps.drawing.DrawingManager as unknown as google.maps.drawing.DrawingManagerConstructor;
+  return new DrawingManagerCtor({
     drawingMode: mapDrawingModeToOverlayType(mapShapeType),
     drawingControl: false,
     polylineOptions: {

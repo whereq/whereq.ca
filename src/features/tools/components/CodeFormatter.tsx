@@ -41,7 +41,7 @@ import "ace-builds/src-noconflict/mode-typescript"; // Syntax highlighting for T
 import "ace-builds/src-noconflict/mode-javascript"; // Syntax highlighting for JavaScript
 import "ace-builds/src-noconflict/theme-monokai"; // Theme for syntax highlighting
 
-const PYODIDE_VERSION = "v0.29.3";
+const PYODIDE_VERSION = "v314.0.8";
 const PYODIDE_CDN = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/`;
 
 // Module-level singleton. Pyodide is heavy (~10 MB WASM + 5+ MB of stdlib

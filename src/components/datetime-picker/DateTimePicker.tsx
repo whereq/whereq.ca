@@ -74,14 +74,15 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, selectedDate, on
   classNames={{
     root: "bg-gray-700 text-orange-300 rounded",
     nav: "flex items-center justify-between mb-2",
-    nav_button: "text-orange-300 hover:text-orange-500",
-    caption: "text-orange-300 font-light flex items-center space-x-2",
+    button_previous: "text-orange-300 hover:text-orange-500",
+    button_next: "text-orange-300 hover:text-orange-500",
+    month_caption: "text-orange-300 font-light flex items-center space-x-2",
     dropdown: "bg-gray-800 text-orange-300 border border-orange-500 rounded focus:ring-2 focus:ring-orange-500",
     weekdays: "grid grid-cols-7 text-orange-400 font-light text-sm mb-2", // Corrected weekdays layout
     weekday: "text-center",
     day: "grid grid-cols-7 gap-1",
-    day_today: "font-bold text-orange-500 border border-orange-500",
-    day_selected: "bg-orange-500 text-white rounded-full",
+    today: "font-bold text-orange-500 border border-orange-500",
+    selected: "bg-orange-500 text-white rounded-full",
   }}
 />
 

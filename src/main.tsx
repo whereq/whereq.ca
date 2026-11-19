@@ -11,8 +11,13 @@ import { AuthProvider } from '@/contexts/AuthContext.tsx'
 import ErrorBoundary from './ErrorBoundary.tsx'
 
 // Polyfill for global object
-if (typeof global === "undefined") {
-  (window as typeof globalThis).global = window;
+// Some browser dependencies expect a Node-style `global`. `globalThis` is the
+// standard equivalent and does not need the Node type definitions (which
+// TypeScript 6 no longer pulls into this project automatically).
+type GlobalWithGlobal = typeof globalThis & { global?: typeof globalThis };
+const globalRef = globalThis as GlobalWithGlobal;
+if (typeof globalRef.global === "undefined") {
+  globalRef.global = globalThis;
 }
 
 // Suppress known noisy unhandled-promise-rejections that come from
