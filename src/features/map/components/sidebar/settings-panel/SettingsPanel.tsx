@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faUndo, faSave } from "@fortawesome/free-solid-svg-icons";
 import CustomModal from "@/components/modals/CustomModal"; // Import the reusable modal
-import { GLOBAL_SETTINGS } from "@/utils/constants";
 import { API_KEY, GOOGLE_MAP_ID, MAP_LOCAL_STORAGE_KEYS } from "@/features/map/utils/constants";
+import { readGoogleMapCredentials } from "@/features/map/utils/mapCredentials";
 import LocalStorageHelper from "@/utils/localStorageHelper";
 import React from "react";
 
@@ -15,11 +15,23 @@ type Row = {
 }
 
 export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
-    const [rows, setRows] = useState<Row[]>([
-        { selected: false, key: API_KEY, value: "", description: "Your Google Map API Key" },
-        { selected: false, key: GOOGLE_MAP_ID, value: "", description: "Your Google Map ID" },
-    ]);
+    // The saved Google Maps API key and map ID are read up front, so the
+    // fields start out filled in.
+    //
+    // The credentials are read through the shared resolver, so a key that was
+    // saved in the "Google Map ID" field (the historical mix-up) is shown in
+    // the API key row instead of being lost.
+    const [rows, setRows] = useState<Row[]>(() => {
+        const { apiKey, mapId } = readGoogleMapCredentials();
+        return [
+            { selected: false, key: API_KEY, value: apiKey || "Enter Your Google Map API Key", description: "Your Google Map API Key" },
+            { selected: false, key: GOOGLE_MAP_ID, value: mapId || "Enter Your Google Map ID", description: "Your Google Map ID" },
+        ];
+    });
     const [unsavedChanges, setUnsavedChanges] = useState(false);
+    // The credentials as they are currently stored, used to detect whether a
+    // save actually changed the key or the map ID.
+    const savedCredentialsRef = useRef(readGoogleMapCredentials());
     const [modalInfo, setModalInfo] = useState<{
         isOpen: boolean;
         title?: string;
@@ -31,27 +43,6 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
         isOpen: false,
         message: "",
     });
-
-    // Load Google Maps API Key and Map ID from local storage
-    useEffect(() => {
-        const loadGoogleMapApiKey = async () => {
-            const savedSettings = LocalStorageHelper.loadSetting(MAP_LOCAL_STORAGE_KEYS.BASE_KEY);
-            if (savedSettings && savedSettings[API_KEY]) {
-                setRows((prevRows) =>
-                    prevRows.map((row) => {
-                        const savedValue = savedSettings?.[row.key];
-                        const defaultValue = row.key === API_KEY ? "Enter Your Google Map API Key" : "Enter Your Google Map ID";
-                        return {
-                            ...row,
-                            value: savedValue || defaultValue,
-                        };
-                    })
-                );
-            } 
-        };
-
-        loadGoogleMapApiKey();
-    }, []);
 
     const updateRow = (index: number, field: string, value: string | boolean) => {
         setRows((prevRows) => {
@@ -71,11 +62,37 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
 
     const handleSave = () => {
         const settingsToSave = rows.reduce((acc, row) => {
-            acc[row.key] = row.value;
+            // An untouched field still holds its placeholder text. Saving that
+            // would store the placeholder as the actual credential.
+            const isPlaceholder = row.value === "Enter Your Google Map API Key"
+                || row.value === "Enter Your Google Map ID";
+            acc[row.key] = isPlaceholder ? "" : row.value;
             return acc;
         }, {} as Record<string, string>);
         LocalStorageHelper.saveSetting(MAP_LOCAL_STORAGE_KEYS.BASE_KEY, settingsToSave);
         setUnsavedChanges(false);
+
+        const previous = savedCredentialsRef.current;
+        const next = {
+            apiKey: settingsToSave[API_KEY] || "",
+            mapId: settingsToSave[GOOGLE_MAP_ID] || "",
+        };
+        savedCredentialsRef.current = next;
+
+        if (previous.apiKey !== next.apiKey || previous.mapId !== next.mapId) {
+            // The Maps JavaScript API is loaded only once per page load, so a
+            // new key or map ID only takes effect after a reload.
+            setModalInfo({
+                isOpen: true,
+                title: "Saved Changes",
+                message: "Your settings have been saved. Reload the page to load the map with them.",
+                isConfirmDialog: true,
+                confirmAction: () => window.location.reload(),
+                cancelAction: () => setModalInfo({ isOpen: false, message: "" }),
+            });
+            return;
+        }
+
         setModalInfo({
             isOpen: true,
             title: "Saved Changes",
@@ -84,11 +101,15 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleRevert = () => {
-        const savedSettings = localStorage.getItem(GLOBAL_SETTINGS);
-        if (savedSettings) {
-            setRows(JSON.parse(savedSettings));
-            setUnsavedChanges(false);
-        }
+        const { apiKey, mapId } = readGoogleMapCredentials();
+        setRows((prevRows) =>
+            prevRows.map((row) => {
+                const savedValue = row.key === API_KEY ? apiKey : mapId;
+                const defaultValue = row.key === API_KEY ? "Enter Your Google Map API Key" : "Enter Your Google Map ID";
+                return { ...row, value: savedValue || defaultValue };
+            })
+        );
+        setUnsavedChanges(false);
         setModalInfo({
             isOpen: true,
             message: "Settings restored from saved version!",

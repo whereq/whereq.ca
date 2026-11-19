@@ -1223,6 +1223,59 @@ The shape handlers receive a `MapDrawingSession`
 (`{ setDrawingEnabled(enabled) }`) rather than a `DrawingManager`
 reference, so hovering an existing shape still pauses drawing.
 
+**The API key and the map ID are two separate settings, and both must be
+known on the first render.** `<APIProvider>` loads the Maps JavaScript API
+exactly once, on mount; it never reloads it. Two rules follow:
+
+- The **API key** must be available during the first render of the map
+  page, otherwise the script is requested as `…/maps/api/js?key=` (empty)
+  and Google rejects every subsequent call with `ApiProjectMapError`.
+  `MapsPage` therefore reads the credentials synchronously
+  (`useState(readGoogleMapCredentials)`) instead of in an effect.
+- The **map ID** must be available when `<Map>` builds the map, otherwise
+  the map is created without one and Google logs *"The map is initialized
+  without a valid Map ID, which will prevent use of Advanced Markers."*.
+  `Maps.tsx` reads it synchronously for the same reason. An empty map ID
+  is passed as `undefined` — `mapId=""` makes
+  `new google.maps.marker.AdvancedMarkerElement(...)` throw.
+
+`utils/mapCredentials.ts` is the single resolver for both values. It
+also recovers a key that was saved in the "Google Map ID" field: the
+settings panel always asked for both, but the page used to read the map
+ID field *as* the API key, so browsers in the wild have a key stored in
+the wrong field. Google API keys start with `AIza` and map IDs do not,
+which is enough to tell them apart.
+
+Without an API key the page does **not** mount `<APIProvider>` at all —
+it shows a short prompt with an "Open settings" button instead of a map
+covered by Google's "This page can't load Google Maps correctly" overlay.
+
+**Three constraints come from the user's own Google Cloud setup, not
+from the code:**
+
+- The Geocoder fallback **cannot work with a referrer-restricted key**.
+  Google's Geocoding web service rejects such keys outright
+  (*"API keys with referer restrictions cannot be used with this API"*);
+  only IP-restricted keys are accepted there. The Places Autocomplete
+  path is the one that works in a browser.
+- The API key's HTTP-referrer restrictions must cover the page URL. A
+  key restricted to `http://localhost:4173/` works on the root page but
+  is refused on `http://localhost:4173/map`.
+- `Cross-Origin-Embedder-Policy: credentialless` (needed for
+  `crossOriginIsolated` → SharedArrayBuffer → FFmpeg.wasm / ONNX)
+  **is what the site now sends**. The previous value, `require-corp`,
+  also gave cross-origin isolation but *additionally* refused every
+  cross-origin subresource that does not opt in with
+  `Cross-Origin-Resource-Policy` — and Google's cloud-styled renderer
+  fetches `maps.googleapis.com/maps/api/js/StaticMapService.GetMapImage`,
+  which carries no such header
+  (`net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep`).
+  The map rendered empty for every BYOK user with a valid key.
+  `credentialless` keeps `crossOriginIsolated` (and SharedArrayBuffer)
+  but loads those no-cors cross-origin resources without credentials,
+  which unblocks the imagery — verified end-to-end, including the
+  FFmpeg cut smoke test and the Pyodide CDN payload.
+
 The app deliberately centers on Toronto (`MAP_CENTER = {lat:43.6532,
 lng:-79.3832}`) and defaults geocoder lookups to "Ontario, Canada" —
 a Canadian-centric app.
@@ -1427,6 +1480,19 @@ the project root: `/vercel.json` — its `headers` block must stay in sync
 with these three values, or the cut/merge/etc. features that need
 SharedArrayBuffer will silently fail to load the video engine in
 production.**"
+
+**`Cross-Origin-Embedder-Policy` has a second consumer.** The value
+`credentialless` is what makes `crossOriginIsolated` true, which is what
+FFmpeg.wasm and ONNX Runtime Web need (SharedArrayBuffer). The value
+`require-corp` would do the same, but it *also* refuses every
+cross-origin subresource that does not opt in with
+`Cross-Origin-Resource-Policy`, and Google's map imagery does not — so
+`require-corp` left the `/map` feature with an empty map. `credentialless`
+loads no-cors cross-origin resources without credentials instead, which
+unblocks the imagery while keeping SharedArrayBuffer. Changing the value
+means changing it in **both** `vite.config.ts` and `vercel.json` (the
+release gate compares them) and re-running the FFmpeg smoke test. See
+§13 `map/` for the measurements.
 
 ### `.env.example`
 
@@ -1716,7 +1782,7 @@ load. The full chain:
 
 1. **Browser**: cross-origin-isolated context requires
    `Cross-Origin-Opener-Policy: same-origin` AND
-   `Cross-Origin-Embedder-Policy: require-corp`.
+   `Cross-Origin-Embedder-Policy: credentialless` (or `require-corp`).
 2. **Vite dev server** (`vite.config.ts`): sets these in
    `server.headers` (dev mode) and `preview.headers` (`vite preview`).
 3. **Vercel prod** (`vercel.json`): sets these in the `headers` block.
@@ -1794,6 +1860,25 @@ that the user should be aware of:
 
 ### Bugs
 
+- **Fixed (v1.7.0) — the `/map` page never loaded Google Maps with a
+  key.** Three separate defects, found by a live-key smoke test:
+  (1) `<APIProvider>` loads the Maps JavaScript API exactly once, on the
+  first render, but the API key was read in an effect — so the script was
+  requested as `…/maps/api/js?key=` (empty) and Google answered every
+  call with `ApiProjectMapError`; (2) the page read the *map ID* field
+  as the API key, so a saved API key was never used; (3) the map ID
+  arrived after `<Map>` had already built the map, so Google refused to
+  render advanced markers on it. See §13 `map/`.
+- **Fixed (v1.7.0) — `Cross-Origin-Embedder-Policy` blocked the map
+  imagery.** `require-corp` gave cross-origin isolation but also refused
+  Google's `StaticMapService.GetMapImage`, so the `/map` feature
+  rendered an empty map for every BYOK user with a valid key. The site
+  now sends `credentialless`, which keeps `crossOriginIsolated` (and the
+  FFmpeg/ONNX SharedArrayBuffer contract) and loads the imagery.
+- **Open — the Geocoder fallback cannot work with a referrer-restricted
+  API key.** Google rejects such keys on the Geocoding web service
+  (*"API keys with referer restrictions cannot be used with this API"*).
+  Only the Places Autocomplete path works in a browser.
 - `tag/components/workspace/Workspace.tsx` imports
   `WhereQTagSection` as `FormatConverterSection` — copy-paste error
   from a `tools/`-to-`tag/` file copy.

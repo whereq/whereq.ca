@@ -3,8 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useMapStore, useOverlayStore, usePlaceStore } from "@/features/map/store/mapStore";
 import { loadMapObjectFromLocalStorage } from "@/features/map/utils/mapUtils";
 import { Map, MapOverlay } from "@/features/map/types/types";
-import { GOOGLE_MAP_ID, MAP_CENTER, MAP_EVENT, MAP_LOCAL_STORAGE_KEYS } from "@/features/map/utils/constants";
-import LocalStorageHelper from "@/utils/localStorageHelper";
+import { MAP_CENTER, MAP_EVENT } from "@/features/map/utils/constants";
 import { updateMarkerIcon } from "@/features/map/utils/mapHandlers";
 import { MarkerIconType } from "@/features/map/models/MapEnum";
 
@@ -75,17 +74,6 @@ export const useHandleClickedOverlay = (
             clearMapOverlayArrayOnMap();
         }
     }, [clickedOverlay, isOverlayVisible, mapRef, drawOverlays, clearOverlayArrayOnMap, clearMapOverlayArrayOnMap]);
-};
-
-export const useLoadGoogleMapId = (setGoogleMapId: (id: string) => void) => {
-    useEffect(() => {
-        const savedSettings = LocalStorageHelper.loadSetting(MAP_LOCAL_STORAGE_KEYS.BASE_KEY);
-        if (savedSettings && savedSettings[GOOGLE_MAP_ID]) {
-            setGoogleMapId(savedSettings[GOOGLE_MAP_ID]);
-        } else {
-            console.warn("Google Map ID not found in local storage.");
-        }
-    }, [setGoogleMapId]);
 };
 
 export const useHandleAdvancedMarker = (

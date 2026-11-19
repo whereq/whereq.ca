@@ -28,8 +28,14 @@ export default defineConfig({
       // must stay in sync with these three values, or the cut/merge/etc.
       // features that need SharedArrayBuffer will silently fail to load the
       // video engine in production.
+      //
+      // COEP is "credentialless" rather than "require-corp": both give
+      // crossOriginIsolated (and therefore SharedArrayBuffer), but
+      // "require-corp" also refuses every cross-origin resource that does not
+      // opt in with Cross-Origin-Resource-Policy. Google's map imagery does
+      // not, so "require-corp" left the /map feature with an empty map.
       "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Embedder-Policy": "credentialless",
       "Cross-Origin-Resource-Policy": "cross-origin",
     },
     proxy: {
@@ -44,7 +50,7 @@ export default defineConfig({
     // Same headers for `vite preview` so you can smoke-test before deploy.
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Embedder-Policy": "credentialless",
       "Cross-Origin-Resource-Policy": "cross-origin",
     },
   },

@@ -43,7 +43,7 @@
 #   1. COOP/COEP/CORP header parity between vite.config.ts and vercel.json.
 #      If these diverge, FFmpeg.wasm / ONNX silently fail in production.
 #      See docs/ARCHITECTURE.md §16.
-#   2. yarn lint            — must be 0 errors (24 warnings is the baseline)
+#   2. yarn lint            — must be 0 errors (30 warnings is the baseline)
 #   3. tsc --noEmit         — must be 0 errors (app + node projects)
 #   4. yarn build           — must succeed (the chunk-size warning is expected)
 #
