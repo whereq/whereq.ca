@@ -92,8 +92,9 @@ async function loadEngine(): Promise<FFmpeg> {
         throw new Error(
             "SharedArrayBuffer is not available. This page must be served with COOP/COEP headers. " +
                 "Vite dev server sets them automatically; production hosting must set " +
-                "'Cross-Origin-Opener-Policy: same-origin' and " +
-                "'Cross-Origin-Embedder-Policy: require-corp' on the response."
+                "'Cross-Origin-Opener-Policy: same-origin' and a " +
+                "'Cross-Origin-Embedder-Policy' that enables cross-origin isolation " +
+                "('credentialless' or 'require-corp') on the response."
         );
     }
     const { coreURL, wasmURL } = await resolveCoreUrls();
