@@ -602,9 +602,22 @@ const GifMaker = () => {
             // in place — we'll need it for the Convert step (or
             // until the user clicks Clear).
             const data = await ffmpeg.readFile(outputName);
+            // `readFile` is typed as FileData (Uint8Array | string); the
+            // engine returns binary for media files.
+            if (typeof data === "string") {
+                throw new Error("The video engine returned text instead of media data.");
+            }
             // data is a Uint8Array (the WASM layer type) — wrap as
             // a Blob so createObjectURL works.
-            const blob = new Blob([data as Uint8Array], { type: "video/mp4" });
+// `data` is a Uint8Array whose buffer is typed `ArrayBufferLike`, which
+            // does not satisfy BlobPart. Narrow it to a plain ArrayBuffer view
+            // — a view over the same bytes, so nothing is copied.
+            const view = new Uint8Array(
+                data.buffer as ArrayBuffer,
+                data.byteOffset,
+                data.byteLength,
+            );
+            const blob = new Blob([view], { type: "video/mp4" });
             const url = URL.createObjectURL(blob);
             setPreparedUrl(url);
             setPreparedSize(blob.size);

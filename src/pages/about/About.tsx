@@ -1,6 +1,19 @@
 import { BsYinYang } from "react-icons/bs";
+import {
+    FaBroadcastTower,
+    FaClock,
+    FaCloud,
+    FaCoins,
+    FaGamepad,
+    FaImages,
+    FaTruck,
+} from "react-icons/fa";
 import PageLayout from "@/layouts/PageLayout";
 import styles from "./About.module.css";
+// The whereq.ca favicon — used as the logo for the WhereQ Lab and
+// WhereQ LLM cards. Imported through the bundler so it is served from
+// this origin (the previous remote logos were blocked by COEP).
+import favicon from "@/assets/favicon.ico";
 
 type Project = {
   name: string;
@@ -20,28 +33,20 @@ const projects: Project[] = [
     description:
       "The research station of the WhereQ Universe — an all-in-one decentralized app hub for productivity, education & personal management where every idea is tested first. No cloud storage, no tracking.",
     url: "https://www.whereq.ca",
-    logo: "https://whereq.github.io/images/logo/whereq-com.png",
+    logo: favicon,
   },
   {
     name: "WhereQ — LLM",
-    description: "AI/LLM integrated platform",
-    url: "https://www.whereq.cc",
-    logo: "https://whereq.github.io/images/logo/whereq-cc.png",
-    disabled: true,
-    comingSoon: true,
+    description:
+      "A common interface for large language models — one API for OpenAI, Gemini and friends, with SSE streaming, Swagger docs and a mock service for testing without a real backend.",
+    url: "https://github.com/whereq/whereq-llm-api",
+    logo: favicon,
   },
   {
     name: "Key To Marvel",
     description: "Unified identity & access management platform",
     url: "https://www.keytomarvel.com",
     icon: <BsYinYang className="metro-icon" />,
-  },
-  {
-    name: "FlowDesk",
-    description:
-      "Deep, structured & intelligent stock analysis powered by AI. Explore companies, investigate investment ideas, and have professional-grade conversations about stocks.",
-    url: "https://www.flowdesk.top",
-    logo: "/logos/flowdesk.svg",
   },
   {
     name: "whereq",
@@ -51,11 +56,67 @@ const projects: Project[] = [
     logo: "/logos/whereq-com.svg",
   },
   {
+    name: "Chroniq",
+    description:
+      "The temporal engine — events, scheduling, booking and calendar intelligence. The clock the rest of the universe sets its time by.",
+    url: "https://www.chroniq.cc",
+    icon: <FaClock className="metro-icon" />,
+  },
+  {
+    name: "whereq.github.io",
+    description:
+      "Mission control — the public voice of the universe. News, announcements, releases and changelogs broadcast from here.",
+    url: "https://whereq.github.io",
+    icon: <FaBroadcastTower className="metro-icon" />,
+  },
+  {
+    name: "WhereQ Cloud",
+    description:
+      "The data platform beneath the products — one shared schema and one source of truth for every market feed, metric and collection job.",
+    url: "https://whereq.cloud",
+    icon: <FaCloud className="metro-icon" />,
+  },
+  {
+    name: "FlowDesk",
+    description:
+      "Deep, structured & intelligent stock analysis powered by AI. Explore companies, investigate investment ideas, and have professional-grade conversations about stocks.",
+    url: "https://www.flowdesk.top",
+    logo: "/logos/flowdesk.svg",
+  },
+  {
+    name: "CCBus",
+    description:
+      "An all-in-one Web3 toolkit — custom token creation with 11+ tokenomics models, presale launches, liquidity management and wallet tools across BSC, Ethereum and Polygon.",
+    url: "https://www.ccbus.cc",
+    icon: <FaCoins className="metro-icon" />,
+  },
+  {
     name: "CatoBigato",
     description:
       "Your chubby cat tutor for K-12 to college. Catobi listens, thinks, and shows the work — explanations, quizzes, and graphs across math, science, and the humanities.",
     url: "https://www.catobigato.com",
     logo: "/logos/catobigato.png",
+  },
+  {
+    name: "WhereQ.cc",
+    description:
+      "The private gallery — a strictly-local photo vault that encrypts your originals in your own browser, with on-demand AI to enhance, describe and animate a single image.",
+    url: "https://www.whereq.cc",
+    icon: <FaImages className="metro-icon" />,
+  },
+  {
+    name: "QHaul",
+    description:
+      "The freight engine — a B2B marketplace connecting Canadian businesses with local driver supply. Freight, courier and small moves across the GTA and beyond.",
+    url: "https://qhaul.ca",
+    icon: <FaTruck className="metro-icon" />,
+  },
+  {
+    name: "WhereQ-DOSBox",
+    description:
+      "The time machine — a native Android port of DOSBox with an on-screen keyboard, a touch mouse and save states that restore the whole machine. Stands alone: it depends on no other planet.",
+    url: "https://github.com/whereq/whereq-dosbox",
+    icon: <FaGamepad className="metro-icon" />,
   },
 ];
 
@@ -80,8 +141,10 @@ const About = () => {
                   </a>
                 </th>
                 <th className={styles.profileRight}>
+                  {/* Served from this origin: the previous remote URL was
+                      blocked by the COEP header in production. */}
                   <img
-                    src="https://whereq.github.io/images/pod/bacon-with-hat-transparent-bg.png"
+                    src="/images/profile/bacon-with-hat-transparent-bg.png"
                     alt="Profile"
                     width="49"
                   />
@@ -109,9 +172,13 @@ const About = () => {
             <p className={styles.lead}>
               <strong>Owner</strong> (2020 - Present)
               <br />
-              Founded WhereQ Inc., specializing in web 2.0 applications for the Real
-              Estate Industry. Additionally, offering OpenAI integration and practical
-              applications.
+              Founded WhereQ Inc. — the company behind the{" "}
+              <span className={styles.accent}>WhereQ Universe</span>: a family of
+              independent products and platforms that share one identity, one map, one
+              clock and one data backbone. Started with web 2.0 applications for the
+              Real Estate Industry and OpenAI integration; today the portfolio spans
+              geospatial, identity, scheduling, media tooling, DeFi, logistics,
+              education, data and retro gaming.
             </p>
             <p className={styles.lead}>
               <strong>Key Achievements:</strong>
@@ -154,11 +221,77 @@ const About = () => {
                 services.
               </li>
             </ul>
+            <p className={styles.lead}>
+              <strong>The WhereQ Universe portfolio:</strong>
+            </p>
+            <ul className={styles.list}>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>WhereQ</span> (whereq.com) — the
+                geospatial engine: maps, routing, places and neighbourhood stories.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>KeyToMarvel</span> (keytomarvel.com) —
+                the universal passport: SSO, MFA and identity for every product.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>Chroniq</span> (chroniq.cc) — the
+                temporal engine: events, scheduling, booking and calendar intelligence.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>WhereQ.ca Lab</span> (whereq.ca/lab) —
+                the research station where every idea is built, tested and validated.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>whereq.github.io</span> — mission
+                control: the public voice, releases and announcements.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>WhereQ Cloud</span> (whereq.cloud) —
+                the data platform: one schema and one source of truth for the family.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>FlowDesk</span> (flowdesk.top) — AI
+                stock analysis, fronted by NOVA the trading guru.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>CCBus</span> (ccbus.cc) — the DeFi
+                engine: token creation, presales and liquidity across three chains.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>CatoBigato</span> (catobigato.com) —
+                the learning planet: vibe tutoring from K-12 to college.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>WhereQ.cc</span> (whereq.cc) — the
+                private gallery: a strictly-local, encrypted photo vault.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>QHaul</span> (qhaul.ca) — the freight
+                engine: a B2B marketplace for Canadian shipping and local driver supply.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>WhereQ-DOSBox</span> (whereq-dosbox) —
+                the time machine: a native Android port of DOSBox with an on-screen
+                keyboard and save states.
+              </li>
+              <li className={styles.listItem}>
+                <span className={styles.accent}>WhereQ LLM API</span> (whereq-llm-api) —
+                one interface for every large language model, with SSE streaming and a
+                mock service for integration testing.
+              </li>
+            </ul>
             <p className={styles.stack}>
               <strong>Technical Environment:</strong>
               <br />
               Amazon EC2, RDS, S3, Spring WebFlux, React, Keycloak, Angular, GIS,
               Google Map, MapStruct, Git, CI/CD, Social Login
+              <br />
+              <br />
+              <strong>Product stack:</strong>
+              <br />
+              React 19, Vite, TypeScript, Tailwind CSS, Zustand, FFmpeg.wasm, ONNX
+              Runtime Web, Pyodide, pdf-lib, Keycloak, PostgreSQL, Docker, Kubernetes,
+              Git, Vercel
             </p>
           </div>
 
@@ -198,6 +331,21 @@ const About = () => {
               <li>
                 Reengineered Credit 360 application, improving performance, codebase,
                 and validation frameworks.
+              </li>
+              <li>
+                Led architecture and delivery of enterprise AI initiatives including{" "}
+                <span className={styles.accent}>Data GPT</span> and internal GenAI
+                enablement platforms, achieving the{" "}
+                <span className={styles.accent}>90-90 KPI</span>. Data GPT is an
+                AI-powered query platform that uses OpenAI&apos;s GPT-3.5 Turbo model
+                to deliver accurate and efficient data retrieval. The 90-90 KPI
+                signifies that the platform attains a 90% query accuracy rate, with 90%
+                of queries processed within 30 seconds, ensuring robust performance for
+                enterprise-grade analytics.
+              </li>
+              <li>
+                Evaluated and integrated emerging AI technologies, establishing reusable
+                frameworks and best practices for enterprise adoption.
               </li>
             </ul>
             <p className={styles.stack}>

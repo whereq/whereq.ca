@@ -30,6 +30,7 @@
   --c-cloud: #38bdf8;
   --c-cc: #d946ef;
   --c-qhaul: #fd5e02;
+  --c-dosbox: #7cfc00;
 
   --font-display: "Space Grotesk", "Avenir Next", sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
@@ -550,6 +551,15 @@
     linear-gradient(90deg, color-mix(in oklab, var(--accent) 14%, transparent) 1px, transparent 1px);
   background-size: 80px 80px, 80px 80px;
   mask-image: radial-gradient(60% 90% at 78% 50%, black, transparent 74%);
+}
+
+.wq-universe .dive[data-motif="crt"]::before {
+  background-image: repeating-linear-gradient(
+    0deg,
+    color-mix(in oklab, var(--accent) 16%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  mask-image: radial-gradient(58% 88% at 50% 50%, black, transparent 76%);
 }
 
 /* mobile-app download block (used by qhaul dive) */

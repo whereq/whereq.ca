@@ -276,6 +276,28 @@ export const UNIVERSE: Universe = {
       ],
     },
     {
+      id: "dosbox",
+      question: "HOW",
+      name: "WhereQ DOSBox",
+      domain: "github.com/whereq/whereq-dosbox",
+      url: "https://github.com/whereq/whereq-dosbox",
+      ring: "outer",
+      angle: 26,
+      size: 34,
+      status: "live",
+      color: "#7CFC00",
+      metaphor: "The Time Machine",
+      tagline: "DOS, reborn on a phone.",
+      blurb:
+        "The retro planet. A native Android port of DOSBox — the emulator core compiled into libdosbox.so inside an APK, with an on-screen keyboard, a touch mouse and save states that restore a machine down to its sound chips. It stands alone: it depends on no other planet in the universe, and no planet depends on it.",
+      responsibilities: [
+        "Native Android DOS emulation",
+        "On-screen keyboard & touch mouse",
+        "Save states & Resume",
+        "DOS bundle launcher",
+      ],
+    },
+    {
       id: "qhaul",
       question: "HOW",
       name: "QHaul",
@@ -376,6 +398,12 @@ export const UNIVERSE: Universe = {
       planet: "qhaul",
       title: "QHaul goes live",
       text: "The freight engine enters orbit — a B2B marketplace for Canadian shipping, with the Android driver app in 内测 and iOS on the way.",
+    },
+    {
+      era: "now",
+      planet: "dosbox",
+      title: "WhereQ-DOSBox lands on Android",
+      text: "The retro planet — a native Android port of DOSBox with a real on-screen keyboard, a touch mouse and save states that restore the whole machine.",
     },
     {
       era: "future",

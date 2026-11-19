@@ -76,8 +76,13 @@ const MapHandler: React.FC<{
         if (drawingMode === "lineOrShape" && map) {
             // Initialize the DrawingManager
             if (!drawingManagerRef.current) {
+                // The upstream @types/google.maps declares DrawingManager
+                // without a constructor (Google deprecated the Drawing library
+                // in API v3.65) — cast to the deprecated constructor signature.
+                const DrawingManagerCtor =
+                    google.maps.drawing.DrawingManager as unknown as google.maps.drawing.DrawingManagerConstructor;
                 drawingManagerRef.current =
-                    new google.maps.drawing.DrawingManager({
+                    new DrawingManagerCtor({
                         drawingMode: google.maps.drawing.OverlayType.POLYLINE, // Default drawing mode
                         drawingControl: false, // Disable default controls
                         polylineOptions: {
