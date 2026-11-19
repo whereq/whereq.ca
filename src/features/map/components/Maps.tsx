@@ -12,13 +12,13 @@ import { useOverlayManager } from "@/features/map/hooks/useOverlayManager";
 import { useMapInitialization } from "@/features/map/hooks/useMapInitialization";
 import { handleLayerSwitch } from "@/features/map/utils/mapEventHandlers";
 import { calculateOverlayBounds } from "@/features/map/utils/mapUtils";
+import { readGoogleMapCredentials } from "@/features/map/utils/mapCredentials";
 import { eventEmitter } from "@/utils/eventEmitter";
 
 import {
     useHandleSelectedPlace,
     useHandleOverlayToggling,
     useHandleClickedOverlay,
-    useLoadGoogleMapId,
     useHandleAdvancedMarker
 } from "@/features/map/hooks/useMap";
 import { useMapStore, usePlaceStore, useMapToolStore, useOverlayStore } from "@/features/map/store/mapStore";
@@ -36,8 +36,7 @@ import { MapOverlay } from "@/features/map/types/types";
 const MapInner: React.FC<{
     mapType: "roadmap" | "satellite";
     setMapType: (t: "roadmap" | "satellite") => void;
-    setGoogleMapId: (id: string) => void;
-}> = ({ mapType, setMapType, setGoogleMapId }) => {
+}> = ({ mapType, setMapType }) => {
     const map = useMap();
     const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -61,7 +60,6 @@ const MapInner: React.FC<{
     useHandleSelectedPlace(mapRef);
     useHandleOverlayToggling(mapRef, drawOverlays, clearOverlayArrayOnMap, clearMapOverlayArrayOnMap);
     useHandleClickedOverlay(mapRef, drawOverlays, clearOverlayArrayOnMap, clearMapOverlayArrayOnMap);
-    useLoadGoogleMapId(setGoogleMapId);
     useHandleAdvancedMarker(mapRef);
 
     // Listen for the workspace item click event
@@ -137,7 +135,11 @@ const MapInner: React.FC<{
 
 const Maps: React.FC = () => {
     const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
-    const [googleMapId, setGoogleMapId] = useState<string>("");
+    // Read the map ID synchronously, during the first render. The map is
+    // created by <Map> as soon as it mounts, so a map ID that arrives later
+    // would only be applied after the map was built without one - and Google
+    // then refuses to render advanced markers on it.
+    const [googleMapId] = useState(() => readGoogleMapCredentials().mapId);
 
     const { isMarkerCustomizeModalOpen } = useMapStore();
     const { placeMapOverlay } = usePlaceStore();
@@ -148,7 +150,7 @@ const Maps: React.FC = () => {
         <>
             <div className="relative h-full w-full">
                 <Map
-                    mapId={googleMapId}
+                    mapId={googleMapId || undefined}
                     center={MAP_CENTER}
                     zoom={12}
                     mapTypeId={mapType}
@@ -160,7 +162,6 @@ const Maps: React.FC = () => {
                     <MapInner
                         mapType={mapType}
                         setMapType={setMapType}
-                        setGoogleMapId={setGoogleMapId}
                     />
                 </Map>
             </div>
