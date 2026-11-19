@@ -492,9 +492,22 @@ const AudioVideoMerger = () => {
 
             setMergePhase("reading");
             const data = await inst.readFile(outName);
+            // `readFile` is typed as FileData (Uint8Array | string); the
+            // engine returns binary for media files.
+            if (typeof data === "string") {
+                throw new Error("The video engine returned text instead of media data.");
+            }
             // `data` is a Uint8Array; wrap it in a Blob and create
             // a URL for the <video> preview / download.
-            const blob = new Blob([data as Uint8Array], { type: "video/mp4" });
+// `data` is a Uint8Array whose buffer is typed `ArrayBufferLike`, which
+            // does not satisfy BlobPart. Narrow it to a plain ArrayBuffer view
+            // — a view over the same bytes, so nothing is copied.
+            const view = new Uint8Array(
+                data.buffer as ArrayBuffer,
+                data.byteOffset,
+                data.byteLength,
+            );
+            const blob = new Blob([view], { type: "video/mp4" });
             const url = URL.createObjectURL(blob);
             setOutputUrl(url);
             setOutputSize(blob.size);

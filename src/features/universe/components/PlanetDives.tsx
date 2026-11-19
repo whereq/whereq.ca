@@ -193,6 +193,26 @@ const DIVES: Dive[] = [
     screenshot: "/images/planets/whereq-cc.png",
   },
   {
+    id: "dosbox",
+    q: "HOW · SHOWCASE",
+    name: "WhereQ-DOSBox",
+    domain: "github.com/whereq/whereq-dosbox",
+    accent: "var(--c-dosbox)",
+    metaphor: "The Time Machine — DOS, reborn on a phone.",
+    blurb:
+      "The retro planet. A native Android port of DOSBox: the emulator core compiled into libdosbox.so inside an APK, with a split on-screen keyboard, a touch-to-DOS mouse and save states that restore the machine down to its sound chips. It stands alone — it depends on no other planet, and no planet depends on it.",
+    caps: [
+      "Native Android DOS emulation",
+      "On-screen keyboard & touch mouse",
+      "Save states & Resume",
+      "DOS bundle launcher",
+    ],
+    url: "https://github.com/whereq/whereq-dosbox",
+    motif: "crt",
+    frameUrl: "github.com/whereq/whereq-dosbox",
+    screenshot: "/images/planets/whereq-dosbox.png",
+  },
+  {
     id: "qhaul",
     q: "HOW · INCUBATED",
     name: "QHaul",

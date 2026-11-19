@@ -1,7 +1,7 @@
 # WhereQ App Hub — Architecture & Detailed Design
 
 > **Repository**: `/home/whereq/git/whereq.ca`
-> **Stack**: React 19 + TypeScript 5.8 + Vite 8 + Tailwind CSS 4 + Zustand 5
+> **Stack**: React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + Zustand 5
 > **Generated**: code-deep-read of every `.ts` / `.tsx` / `.css` / config file
 > under the repo (excluding `node_modules` and `dist`).
 
@@ -1143,8 +1143,10 @@ AND `localStorage["event-storage"]` (the `persist` middleware). The
 in-memory `events` array is dead code (the calendar only reads from
 `fetchEvents()` which scans all `localStorage` keys).
 
-`react-day-picker` is in package.json but unused (the calendar uses
-native HTML date inputs).
+`react-day-picker` is in package.json but only reachable from the
+commented-out DP calendar path — the live calendar grid uses native
+HTML date inputs, so the day-picker styles are effectively dead
+weight (see §14 for the v10 class-name mapping).
 
 ### `category/`
 
@@ -1256,8 +1258,10 @@ The `CodeFormatter` sub-tool is the only real content. Uses Pyodide
 module-level `pyodideSingleton` + `pyodideInitPromise` to ensure only
 one instance is created even under React StrictMode. Bumps
 `setMaxListeners(50)` on stdout/stderr to avoid `MaxListenersExceededWarning`
-under StrictMode. Loads from `https://cdn.jsdelivr.net/pyodide/v0.29.3/full/`,
-then `micropip.install('black')` and pre-imports `black`.
+under StrictMode. Loads from `https://cdn.jsdelivr.net/pyodide/v314.0.8/full/`,
+then `micropip.install('black')` and pre-imports `black`. The CDN path
+is a hardcoded constant (`PYODIDE_VERSION`) that must be kept in sync
+with the `pyodide` package version.
 
 The UI is a 2-column grid: left `AceEditor` (from `react-ace`, using
 Python/Java/Bash/TypeScript/JavaScript modes and the monokai theme),
@@ -1293,6 +1297,13 @@ center so lines don't overlap planets.
 All planet data lives in one constant `UNIVERSE` at
 `data/universe.ts`; adding a new planet is a one-file change.
 
+The galaxy currently holds **12 planets**. `whereq-dosbox` (the
+native Android port of DOSBox) is the one planet with **no dependency
+edges** — it is a standalone showcase of the ecosystem and depends on
+no other WhereQ project. It carries the `crt` background motif
+(scanlines) and the `#dive-dosbox` deep-dive section; its screenshot
+is a local asset at `public/images/planets/whereq-dosbox.png`.
+
 The page intentionally changes `html.style.scrollBehavior` and
 `document.body.style.backgroundColor` on mount, and restores them in
 the cleanup.
@@ -1300,18 +1311,42 @@ the cleanup.
 ### `pages/about/About.tsx` — the bio + project grid
 
 The "PROJECTS" grid is the one place where external products are
-listed. Currently:
+listed. It now carries **13 cards**, one per WhereQ Universe project:
 
-- **WhereQ Lab** — `https://www.whereq.ca` (this app).
-- **WhereQ — LLM** — `https://www.whereq.cc` (disabled, coming soon).
+- **WhereQ Lab** — `https://www.whereq.ca` (this app). Logo: the
+  `whereq.ca` favicon, imported from `@/assets/favicon.ico`.
+- **WhereQ — LLM** — `https://github.com/whereq/whereq-llm-api`. Same
+  favicon logo as WhereQ Lab. No longer disabled / "coming soon".
 - **Key To Marvel** — `https://www.keytomarvel.com` (`BsYinYang` icon).
-- **FlowDesk** — `https://www.flowdesk.top` (logo: `/logos/flowdesk.svg`).
 - **whereq** — `https://www.whereq.com` (logo: `/logos/whereq-com.svg`).
+- **Chroniq** — `https://www.chroniq.cc` (`FaClock` icon).
+- **whereq.github.io** — `https://whereq.github.io` (`FaBroadcastTower`).
+- **WhereQ Cloud** — `https://whereq.cloud` (`FaCloud` icon).
+- **FlowDesk** — `https://www.flowdesk.top` (logo: `/logos/flowdesk.svg`).
+- **CCBus** — `https://www.ccbus.cc` (`FaCoins` icon).
 - **CatoBigato** — `https://www.catobigato.com` (logo:
   `/logos/catobigato.png`).
+- **WhereQ.cc** — `https://www.whereq.cc` (`FaImages` icon).
+- **QHaul** — `https://qhaul.ca` (`FaTruck` icon).
+- **WhereQ-DOSBox** — `https://github.com/whereq/whereq-dosbox`
+  (`FaGamepad` icon).
 
 `Project` type: `{name, description, url, icon?: ReactNode, logo?: string, disabled?, comingSoon?}`.
 The render auto-detects which to use (icon node vs image src).
+
+**All logos are local assets.** An earlier revision hot-linked the
+logos from `whereq.github.io`, which broke in production: the
+COOP/COEP header (see §16) blocks those cross-origin requests, so
+the `<img>` never loaded. The same reason applies to the profile
+photo, which is now bundled at
+`public/images/profile/bacon-with-hat-transparent-bg.png`.
+
+The page also hosts the **WhereQ Inc.** section (an intro paragraph
+plus a 13-item "The WhereQ Universe portfolio" list, and a
+Technical Environment block with a Product stack line) and the
+**Scotiabank** section, which now lists two AI achievements: the
+Data GPT / 90-90 KPI work and the evaluation and integration of
+emerging AI technologies into reusable enterprise frameworks.
 
 ---
 
@@ -1398,40 +1433,110 @@ rule is `@typescript-eslint/no-explicit-any`, which is why the
 
 ### `package.json` — notable deps
 
-- `react@19.2.5` + `react-dom@19.2.5`
+- `react@19.3.1` + `react-dom@19.3.1`
 - `@ffmpeg/ffmpeg@0.12.15` + `@ffmpeg/util@0.12.2` (FFmpeg.wasm)
 - `gif.js@0.2.0` (no TS types — `// @ts-expect-error` everywhere)
 - `gifuct-js@2.1.2` (no first-class types)
-- `@imgly/background-removal@1.5.8` (uses onnxruntime-web internally)
-- `zustand@5.0.12`
-- `@tanstack/react-query@5.99.0` (only used in one place)
-- `@vis.gl/react-google-maps@1.8.3` + `@types/googlemaps@3.43.3`
-- `pyodide@0.29.3`
-- `mathjax` + `mathjax-full@3.2.2`
-- `keycloak-js@26.2.3` + `@types/keycloak-js@3.4.1`
+- `@imgly/background-removal@1.7.0` (uses onnxruntime-web internally)
+- `onnxruntime-web@1.21.0` (pinned to the stable release; the previous
+  `1.21.0-dev.20250114-…` was a prerelease)
+- `zustand@5.1.0`
+- `@tanstack/react-query@5.108.1` (only used in one place)
+- `@vis.gl/react-google-maps@1.10.2` + `@types/google.maps@3.66.10`
+- `pyodide@314.0.8`
+- `mathjax@4.1.3` + `mathjax-full@3.2.2` (both present; `mathjax` is a
+  dead dependency — the app renders through `mathjax-full`)
+- `keycloak-js@26.2.5` + `@types/keycloak-js@3.4.1`
 - `react-modal@3.16.3` + `@types/react-modal@3.16.3`
-- `prismjs@1.30.0` + `@types/prismjs@1.26.5` +
-  `react-syntax-highlighter@16.1.1` +
+- `prismjs@1.30.0` + `@types/prismjs@1.26.6` +
+  `react-syntax-highlighter@16.1.2` +
   `@types/react-syntax-highlighter@15.5.13`
-- `ace-builds@1.43.6` + `react-ace@14.0.1`
-- `js-yaml@4.1.0` + `@types/js-yaml@4.0.9`
-- `dayjs@1.11.20` + `react-day-picker@9.14.0` (the latter is unused)
+- `ace-builds@1.45.2` + `react-ace@15.0.0`
+- `js-yaml@5.5.0` (v5 ships its own types — `@types/js-yaml` was removed)
+- `dayjs@1.11.23` + `date-fns@4.1.0` + `react-day-picker@10.0.2` (the
+  day-picker is only reachable from the commented-out DP calendar path)
 - `re-resizable@6.11.2`
 - `clsx@2.1.1`
-- `zod@4.3.6` (declared but not heavily used)
-- `uuid@13.0.0`
+- `zod@4.6.7` (declared but not heavily used)
+- `uuid@14.0.3`
 - `react-ga4@3.0.1`
-- `react-icons@5.6.0`
+- `react-icons@5.7.0`
 - `react-markdown@10.1.0` + `remark-gfm@4.0.1` + `remark@15.0.1` +
   `rehype-raw@7.0.0` + `rehype@13.0.2`
-- `@fortawesome/react-fontawesome@3.3.0` + `fontawesome-svg-core@7.2.0` +
-  `free-solid-svg-icons@7.2.0`
-- `@fontsource/fira-code@5.2.7`
-- `react-router-dom@7.14.1`
+- `@fortawesome/react-fontawesome@3.5.0` +
+  `fontawesome-svg-core@7.3.1` +
+  `free-solid-svg-icons@7.3.1`
+- `@fontsource/fira-code@5.3.0`
+- `react-router-dom@7.18.6`
 
-Build deps: `@vitejs/plugin-react@4.4.1`, `vite@8.0.8`, `vite-plugin-svgr@4.3.0`,
-`tailwindcss@4.2.2`, `@tailwindcss/vite@4.2.2`, `postcss@8.5.10`,
-`autoprefixer@10.5.0`, `typescript@5.8.2`.
+Build deps: `@vitejs/plugin-react@6.3.0`, `vite@8.3.8`, `vite-plugin-svgr@5.2.0`,
+`tailwindcss@4.3.5`, `@tailwindcss/vite@4.3.5`, `postcss@8.5.33`,
+`autoprefixer@10.6.2`, `typescript@6.0.3`.
+
+### Dependency-upgrade gotchas (the 2026-Q4 stable sweep)
+
+The bump to the latest stable releases was not a pure `package.json`
+edit — five upstream changes required source changes. Each one is a
+trap that will bite again on the next sweep.
+
+1. **TypeScript 6 stopped auto-including `@types/*` packages.** The
+   `google.maps` namespace simply vanished from the editor and from
+   `tsc`. The fix is `src/types/google-maps-drawing.d.ts`, which
+   carries `/// <reference types="google.maps" />` to re-add the
+   package explicitly.
+
+2. **`@types/googlemaps` (legacy) and `@types/google.maps` (current)
+   declare the same global namespace.** Installing both makes the
+   `google.maps` namespace disappear at compile time with no useful
+   error. The legacy package was removed; `@types/google.maps` is
+   required by `@vis.gl/react-google-maps@1.10.2` and is now a
+   direct dependency.
+
+3. **The Google Maps Drawing library is deprecated upstream** (Google
+   stopped shipping it in Maps JS API 3.65). The app still targets
+   it, so `src/types/google-maps-drawing.d.ts` re-declares the
+   `google.maps.drawing` surface locally (`DrawingManagerOptions`,
+   `DrawingManagerConstructor`, the `DrawingManager` members
+   `setMap` / `setOptions` / `getOptions` / `drawingMode`, and
+   `OverlayCompleteEvent`). Construction sites now cast through
+   `DrawingManagerConstructor` because the upstream class has no
+   constructor of its own — see `features/map/utils/mapUtils.ts` and
+   `features/map-gl/components/Maps.tsx`. **This is a landmine, not
+   a fix**: the drawing feature will stop working the moment Google
+   removes the library from the served API. Porting it to
+   `google.maps.marker` / `AdvancedMarkerElement` is a separate
+   project.
+
+4. **react-day-picker v9 → v10 renamed the CSS class names.** The
+   `DeprecatedUI` mapping is `nav_button` → `button_previous` +
+   `button_next`, `caption` → `month_caption`, `day_today` → `today`,
+   `day_selected` → `selected`. Applied in
+   `components/datetime-picker/DateTimePicker.tsx` and
+   `DateTimePickerDP.tsx`. The v10 `DayPicker` also takes its props
+   differently from v9, but the app's usage happens to still
+   type-check.
+
+5. **js-yaml v5 is YAML 1.2 and ships its own types.** The named
+   export `load` replaces the default export (`import { load as
+   loadYaml } from "js-yaml"` in the three `resourceLoader.ts`
+   files), and timestamps now parse as **strings** rather than
+   `Date` objects. That is actually what the app wants — the API
+   explorer models parameters as `Record<string, string>` — but any
+   future code that expects a `Date` will break silently.
+
+Two smaller bumps also needed source changes: `pyodide`'s CDN
+version constant in `features/tools/components/CodeFormatter.tsx`
+(now `v314.0.8`) and the ffmpeg `readFile` return type, which is
+`Uint8Array | string` and must be narrowed before it can be turned
+into a `Blob` (`AudioVideoMerger`, `VideoSplitter`, `GifMaker`).
+
+`date-fns` was previously a phantom dependency — imported by
+`components/datetime-picker/DateTimePickerDP.tsx` but never
+declared. It is now declared explicitly at `^4.1.0`.
+
+TypeScript is deliberately held at `~6.0.3` rather than 7.x:
+`typescript-eslint@8.73.0` declares a peer range of
+`>=4.8.4 <6.1.0`, and the release gate runs `yarn lint`.
 
 ---
 
@@ -1567,6 +1672,14 @@ that the user should be aware of:
 - `multimedia/components/ImageFormatConverter.tsx` AND
   `multimedia/components/VideoSplitter.tsx` AND others have a
   `status: "ready"` enum value that's never actually entered.
+- The `mathjax` package (as opposed to `mathjax-full`) is a dead
+  dependency — only `mathjax-full/js/*` is imported, by
+  `utils/mathJaxSetup.ts`.
+- The whole `*DP` calendar path is unreachable: `CalendarPage.tsx`
+  comments out `<LeftSidebarDP />`, so `DateTimePickerDP`,
+  `EventCreationModalDP` and `react-day-picker` never render. They
+  are kept in the tree because the day-picker styling may be
+  revived.
 
 ### Bugs
 
@@ -1591,6 +1704,23 @@ that the user should be aware of:
   white when exporting to JPEG regardless of the user's
   `flattenOnExport` toggle, but the UI only shows the picker when
   the toggle is on. The auto-flatten is silent.
+
+### Upstream deprecations (things that will break, not now)
+
+- **Google Maps Drawing library.** Google deprecated it (Aug 2025) and
+  stopped shipping it in Maps JS API 3.65. The `map/` and `map-gl/`
+  features still call `google.maps.drawing.DrawingManager`. The types
+  are currently supplied by a local augmentation in
+  `src/types/google-maps-drawing.d.ts`, so `tsc` is happy — but the
+  runtime call will fail once Google serves an API without the
+  library. Porting to `google.maps.marker.AdvancedMarkerElement` is a
+  separate piece of work, not a dependency bump.
+- **`react-day-picker` v10** dropped the `DeprecatedUI` class names
+  that v9 consumers styled against. Already remapped in this repo
+  (see §14), but any new day-picker usage must use the v10 names.
+- **js-yaml v5** follows YAML 1.2, so unquoted timestamps are
+  strings rather than `Date` objects. Code that relies on the v4
+  `Date` behaviour will break silently.
 
 ### Duplicated boilerplate
 
@@ -1767,7 +1897,7 @@ If the feature has user-tunable settings, add them via the
 - `yarn dev` — manual smoke test.
 - `yarn build` — production build (will fail on type errors and on
   chunk size warnings if your new feature is heavy).
-- `yarn lint` — must be 0 errors (24 warnings is the current baseline
+- `yarn lint` — must be 0 errors (32 warnings is the current baseline
   and is acceptable).
 
 ### 12. Update this document
@@ -1933,7 +2063,7 @@ bin/release.sh --message "Your release summary"
 
 # 1. Lint must be clean (0 errors; warnings OK if at baseline).
 yarn lint
-#   → expected: "✖ 24 problems (0 errors, 24 warnings)" or fewer.
+#   → expected: "✖ 32 problems (0 errors, 32 warnings)" or fewer.
 
 # 2. TypeScript build must succeed.
 yarn build
@@ -1986,10 +2116,11 @@ Beyond that, before each release:
    be served at `/silent-check-sso.html` (it is — see the `dist/`
    listing above).
 4. **Universe landing page** — visit `/`, scroll through all
-   sections, click a planet. The 8 planets, the incubation
+   sections, click a planet. The 12 planets, the incubation
    pipeline, and the footer should all render.
 5. **About page** — visit `/about`. The project grid should show
-   the 8 projects currently listed.
+   the 13 projects currently listed, and every logo should resolve
+   (they are all local assets — check the Network tab for 404s).
 6. **At least one GA4 event** — open DevTools → Network, filter
    for `google-analytics`, perform an action. Should see at least
    one `page_view`.

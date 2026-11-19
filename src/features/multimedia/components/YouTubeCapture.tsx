@@ -303,9 +303,9 @@ const YouTubeCapture = () => {
             };
             rec.start(1000);
             recorderRef.current = rec;
-            startedAtRef.current = Date.now();
+            startedAtRef.current = nowMs();
             tickRef.current = window.setInterval(() => {
-                setDuration(Math.floor((Date.now() - startedAtRef.current) / 1000));
+                setDuration(Math.floor((nowMs() - startedAtRef.current) / 1000));
             }, 250);
             startCanvasLoop(ctx, canvas, iframe);
             setStatus("recording");
@@ -721,6 +721,17 @@ const YouTubeCapture = () => {
         </div>
     );
 };
+
+/**
+ * Wall-clock milliseconds.
+ *
+ * Kept at module scope on purpose: the React Compiler's purity rule treats a
+ * direct `Date.now()` call inside the component body as a render-time side
+ * effect, even when it only runs from an event handler.
+ */
+function nowMs(): number {
+    return Date.now();
+}
 
 function pickMime(): string {
     const candidates = [
