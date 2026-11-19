@@ -13,10 +13,8 @@ import {
 import LocalStorageHelper from "@/utils/localStorageHelper";
 import { BASE_KEY, GOOGLE_MAP_ID } from "@/features/map-gl/utils/constants";
 import PlaceInfoModal from "@/features/map-gl/components/PlaceInfoModal";
-import MapDrawingOptions from "@/features/map-gl/components/MapDrawingOptions";
 import CustomModal from "@/components/modals/CustomModal"; // Import the CustomModal component
 import { MAP_EVENT } from "@/features/map/utils/constants";
-import logUtil from "@/utils/logUtil";
 
 const center = {
     lat: 43.6532,
@@ -29,18 +27,15 @@ const MapHandler: React.FC<{
     autoCompleteRef: React.MutableRefObject<google.maps.places.Autocomplete | null>;
     setSearchText: (text: string) => void;
     handleSearch: () => void; // Add handleSearch to props
-    drawingMode: string;
 }> = ({
     markerPosition,
     setIsModalOpen,
     autoCompleteRef,
     setSearchText,
     handleSearch,
-    drawingMode,
 }) => {
     const map = useMap(); // Use the useMap hook inside the MapHandler component
     const advancedMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null); // Define advancedMarkerRef
-    const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
 
     useEffect(() => {
         const checkGoogleMapsLoaded = () => {
@@ -71,76 +66,6 @@ const MapHandler: React.FC<{
 
         checkGoogleMapsLoaded();
     }, []);
-
-    useEffect(() => {
-        if (drawingMode === "lineOrShape" && map) {
-            // Initialize the DrawingManager
-            if (!drawingManagerRef.current) {
-                // The upstream @types/google.maps declares DrawingManager
-                // without a constructor (Google deprecated the Drawing library
-                // in API v3.65) — cast to the deprecated constructor signature.
-                const DrawingManagerCtor =
-                    google.maps.drawing.DrawingManager as unknown as google.maps.drawing.DrawingManagerConstructor;
-                drawingManagerRef.current =
-                    new DrawingManagerCtor({
-                        drawingMode: google.maps.drawing.OverlayType.POLYLINE, // Default drawing mode
-                        drawingControl: false, // Disable default controls
-                        polylineOptions: {
-                            strokeColor: "#FF0000",
-                            strokeOpacity: 1.0,
-                            strokeWeight: 2,
-                        },
-                        polygonOptions: {
-                            fillColor: "#FF0000",
-                            fillOpacity: 0.4,
-                            strokeColor: "#FF0000",
-                            strokeOpacity: 1.0,
-                            strokeWeight: 2,
-                        },
-                        circleOptions: {
-                            fillColor: "#FF0000",
-                            fillOpacity: 0.5,
-                            strokeColor: "#FF0000",
-                            strokeOpacity: 1.0,
-                            strokeWeight: 2,
-                        },
-                        rectangleOptions: {
-                            fillColor: "#FF0000",
-                            fillOpacity: 0.5,
-                            strokeColor: "#FF0000",
-                            strokeOpacity: 1.0,
-                            strokeWeight: 2,
-                        },
-                    });
-            }
-
-            const drawingManager = drawingManagerRef.current;
-            drawingManager.setMap(map);
-
-            // Event listener for completed drawing
-            const onOverlayComplete = (event: google.maps.drawing.OverlayCompleteEvent) => {
-                if (event.type === google.maps.drawing.OverlayType.POLYLINE) {
-                    const polyline = event.overlay as google.maps.Polyline;
-                    logUtil.log("Polyline completed");
-                    logUtil.log(polyline.getPath().getArray());
-                    const polygon = event.overlay as google.maps.Polygon;
-                    logUtil.log("Polygon completed");
-                    logUtil.log(polygon.getPath().getArray());
-                    if (event.overlay instanceof google.maps.Polygon) {
-                        logUtil.log("Polygon completed");
-                        logUtil.log(event.overlay.getPath().getArray());
-                    }
-                }
-            };
-
-            google.maps.event.addListener(drawingManager, "overlaycomplete", onOverlayComplete);
-
-            return () => {
-                drawingManager.setMap(null);
-                google.maps.event.clearListeners(drawingManager, "overlaycomplete");
-            };
-        }
-    }, [drawingMode, map]);
 
     useEffect(() => {
         if (markerPosition && map && window.google.maps.marker) {
@@ -175,7 +100,6 @@ const Maps: React.FC = () => {
     const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(center);
     const [mapZoom, setMapZoom] = useState<number>(12);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false); // State for the search modal
-    const [drawingMode, setDrawingMode] = useState<string>(""); // State for drawing mode
 
     const inputRef = useRef<HTMLInputElement | null>(null);
     const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -247,10 +171,6 @@ const Maps: React.FC = () => {
         }
     };
 
-    const handleDrawingOptionSelect = (option: string) => {
-        setDrawingMode(option);
-    };
-
     useEffect(() => {
         const savedSettings = LocalStorageHelper.loadSetting(BASE_KEY);
         if (savedSettings && savedSettings[GOOGLE_MAP_ID]) {
@@ -261,7 +181,7 @@ const Maps: React.FC = () => {
     }, []);
 
     return (
-        <APIProvider apiKey={googleMapId} libraries={["places", "drawing"]}>
+        <APIProvider apiKey={googleMapId} libraries={["places"]}>
             <div style={{ height: "100%", width: "100%" }}>
                 <Map
                     mapId={googleMapId}
@@ -278,7 +198,6 @@ const Maps: React.FC = () => {
                         autoCompleteRef={autoCompleteRef}
                         setSearchText={setSearchText}
                         handleSearch={handleSearch} 
-                        drawingMode={drawingMode}
                     />
 
                     <button
@@ -307,6 +226,10 @@ const Maps: React.FC = () => {
                         >
                             Search
                         </button>
+                        {/* NOTE: the drawing toolbar was removed from this legacy copy
+                            along with the deprecated Google Maps Drawing library. The live
+                            map feature lives in `features/map` — see
+                            `features/map/utils/MapDrawingController.tsx`. */}
                         <div className="flex space-x-2 text-sm">
                             <button className="bg-gray-700 p-1 rounded shadow hover:bg-gray-600">
                                 <FontAwesomeIcon icon={faUndo} />
@@ -320,7 +243,6 @@ const Maps: React.FC = () => {
                             <button className="bg-gray-700 p-1 rounded shadow hover:bg-gray-600">
                                 <FontAwesomeIcon icon={faMapMarkerAlt} />
                             </button>
-                            <MapDrawingOptions onSelectOption={handleDrawingOptionSelect} />
                             <button className="bg-gray-700 p-1 rounded shadow hover:bg-gray-600">
                                 <FontAwesomeIcon icon={faRuler} />
                             </button>

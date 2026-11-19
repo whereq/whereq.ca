@@ -2,15 +2,14 @@ import { attachListenersToEditablePolygon } from "@/features/map/utils/mapListen
 import { v4 as uuidv4 } from 'uuid';
 import { highlightShape, highlightMarker, 
          createMarkerWithText, 
-         mapDrawingModeToOverlayType, 
-         saveSearchToLocalStorage, 
+                saveSearchToLocalStorage, 
          makeDefaultMarkderContent,
          createMapOverlayFromPlaceResult,
          createMapOverlayFromGeocoderResult,
          getLatLngFromPosition,
          createResizableMarkerWithImgUrl} from "@/features/map/utils/mapUtils";
 import { MapOverlay, MarkerIcon } from "@/features/map/types/types";
-import { MapOverlayType, MapShapeType } from "@/features/map/models/MapEnum";
+import { MapOverlayType } from "@/features/map/models/MapEnum";
 import { DEFAULT_CITY, DEFAULT_PROVINCE, MAP_DRAWING_COLOR, MAP_EVENT } from "@/features/map/utils/constants";
 import { MarkerIconType } from "@/features/map/models/MapEnum";
 import { eventEmitter } from "@/utils/eventEmitter";
@@ -21,6 +20,20 @@ interface HandleSearchParams {
   autoCompleteInstance: google.maps.places.Autocomplete | null;
   setPlaceMapOverlay: (place: MapOverlay | null) => void;
   setClickedOverlay: (clickedOverlay: MapOverlay | null) => void;
+}
+
+/**
+ * The live drawing session, handed to the shape handlers so they can pause
+ * drawing while the pointer is over an existing shape.
+ *
+ * This replaces the old `google.maps.drawing.DrawingManager` reference: the
+ * deprecated Drawing library was removed from the Maps JavaScript API in
+ * v3.65.3b (4 June 2026), so the map feature now drives the input layer
+ * itself. See `utils/MapDrawingController.tsx`.
+ */
+export interface MapDrawingSession {
+  /** Suspend (false) or resume (true) collecting new vertices. */
+  setDrawingEnabled: (enabled: boolean) => void;
 }
 
 export const handleSearch = async ({
@@ -80,8 +93,7 @@ export const handleSearch = async ({
 
 export const handlePolygonComplete = (
   polygon: google.maps.Polygon,
-  mapShapeType: MapShapeType | null,
-  drawingManagerRef: React.RefObject<google.maps.drawing.DrawingManager | null>,
+  drawingSessionRef: React.RefObject<MapDrawingSession | null>,
 ): MapOverlay => {
   polygon.setOptions({
     fillColor: MAP_DRAWING_COLOR.DEFAULT_FILL_COLOR,
@@ -121,16 +133,12 @@ export const handlePolygonComplete = (
 
   polygon.addListener("mouseover", () => {
     logUtil.log("Mouse over the polygon");
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setOptions({ drawingMode: null }); // Disable drawing mode
-    }
+    drawingSessionRef.current?.setDrawingEnabled(false); // Pause drawing while over a shape
   });
 
   polygon.addListener("mouseout", () => {
     logUtil.log("Mouse out of the polygon");
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setOptions({ drawingMode: mapShapeType ? mapDrawingModeToOverlayType(mapShapeType) : null }); // Re-enable drawing mode
-    }
+    drawingSessionRef.current?.setDrawingEnabled(true); // Resume drawing
   });
 
   const paths = polygon.getPath().getArray().map(latLng => ({ lat: latLng.lat(), lng: latLng.lng() }));
@@ -165,8 +173,7 @@ export const handlePolylineComplete = (
 
 export const handleCircleComplete = (
   circle: google.maps.Circle,
-  mapShapeType: MapShapeType | null,
-  drawingManagerRef: React.RefObject<google.maps.drawing.DrawingManager | null>,
+  drawingSessionRef: React.RefObject<MapDrawingSession | null>,
 ): MapOverlay => {
   circle.setOptions({
     fillColor: MAP_DRAWING_COLOR.DEFAULT_FILL_COLOR,
@@ -198,16 +205,12 @@ export const handleCircleComplete = (
 
   circle.addListener("mouseover", () => {
     logUtil.log("Mouse over the circle");
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setOptions({ drawingMode: null }); // Disable drawing mode
-    }
+    drawingSessionRef.current?.setDrawingEnabled(false); // Pause drawing while over a shape
   });
 
   circle.addListener("mouseout", () => {
     logUtil.log("Mouse out of the circle");
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setOptions({ drawingMode: mapShapeType ? mapDrawingModeToOverlayType(mapShapeType) : null }); // Re-enable drawing mode
-    }
+    drawingSessionRef.current?.setDrawingEnabled(true); // Resume drawing
   });
 
   const center = circle.getCenter();
@@ -226,8 +229,7 @@ export const handleCircleComplete = (
 
 export const handleRectangleComplete = (
   rectangle: google.maps.Rectangle,
-  mapShapeType: MapShapeType | null,
-  drawingManagerRef: React.RefObject<google.maps.drawing.DrawingManager | null>,
+  drawingSessionRef: React.RefObject<MapDrawingSession | null>,
 ): MapOverlay => {
   rectangle.setOptions({
     fillColor: MAP_DRAWING_COLOR.DEFAULT_FILL_COLOR,
@@ -259,16 +261,12 @@ export const handleRectangleComplete = (
 
   rectangle.addListener("mouseover", () => {
     logUtil.log("Mouse over the rectangle");
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setOptions({ drawingMode: null }); // Disable drawing mode
-    }
+    drawingSessionRef.current?.setDrawingEnabled(false); // Pause drawing while over a shape
   });
 
   rectangle.addListener("mouseout", () => {
     logUtil.log("Mouse out of the rectangle");
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setOptions({ drawingMode: mapShapeType ? mapDrawingModeToOverlayType(mapShapeType) : null }); // Re-enable drawing mode
-    }
+    drawingSessionRef.current?.setDrawingEnabled(true); // Resume drawing
   });
 
   const bounds = rectangle.getBounds();

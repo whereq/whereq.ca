@@ -1199,6 +1199,30 @@ Inter-component messaging uses the local `eventEmitter` for
 `polygon-clicked`, `circle-clicked`, `rectangle-clicked`,
 `MAP_WORKSPACE_MY_MAP_CLICK`.
 
+**Drawing is native, not the deprecated Drawing library.**
+`utils/MapDrawingController.tsx` implements the click-to-draw input
+layer directly on `google.maps` overlays — Google removed the Drawing
+library in Maps JS API v3.65.3b (4 June 2026), and the old
+`DrawingManager` call sat in an unguarded `useEffect`, so one click on
+a shape tool used to replace the whole app with the root
+`ErrorBoundary` fallback. See §14 gotcha 3 for the migration detail
+and the shape-by-shape interaction table.
+
+The controller attaches `click` / `dblclick` / `mousemove` listeners to
+the map, keeps a draft shape plus a rubber-band preview
+(`MAP_DRAWING_PREVIEW`), and commits through the same
+`handlePolygonComplete` / `handlePolylineComplete` /
+`handleCircleComplete` / `handleRectangleComplete` /
+`handleMarkerComplete` handlers as before — those still convert the
+result into the `MapOverlay` model. Every entry point is wrapped in a
+try/catch that sets `drawingUnavailable` in the overlay store; the
+toolbar then disables the shape buttons and shows a short notice
+rather than letting a failure reach the root `ErrorBoundary`.
+
+The shape handlers receive a `MapDrawingSession`
+(`{ setDrawingEnabled(enabled) }`) rather than a `DrawingManager`
+reference, so hovering an existing shape still pauses drawing.
+
 The app deliberately centers on Toronto (`MAP_CENTER = {lat:43.6532,
 lng:-79.3832}`) and defaults geocoder lookups to "Ontario, Canada" —
 a Canadian-centric app.
@@ -1208,7 +1232,9 @@ a Canadian-centric app.
 An older, simpler Google Maps implementation that **is not in the
 router**. Uses local `useState` for everything, no zustand. The
 `MapDrawingOptions.tsx` is `map/`'s predecessor and explicitly
-deprecated in JSDoc.
+deprecated in JSDoc. Its drawing toolbar and DrawingManager wiring were
+removed along with the deprecated Drawing library; the live drawing
+implementation is `features/map/utils/MapDrawingController.tsx`.
 
 ### `math/`
 
@@ -1481,9 +1507,12 @@ trap that will bite again on the next sweep.
 
 1. **TypeScript 6 stopped auto-including `@types/*` packages.** The
    `google.maps` namespace simply vanished from the editor and from
-   `tsc`. The fix is `src/types/google-maps-drawing.d.ts`, which
-   carries `/// <reference types="google.maps" />` to re-add the
-   package explicitly.
+   `tsc`. The fix is `"types": ["google.maps"]` in
+   `tsconfig.app.json` — the `types` compiler option re-adds that
+   package's globals explicitly. (An earlier iteration used a
+   `/// <reference types="google.maps" />` triple-slash directive in a
+   `src/types/*.d.ts` file; the tsconfig option is the idiomatic form
+   and it survives deleting that file.)
 
 2. **`@types/googlemaps` (legacy) and `@types/google.maps` (current)
    declare the same global namespace.** Installing both makes the
@@ -1492,20 +1521,99 @@ trap that will bite again on the next sweep.
    required by `@vis.gl/react-google-maps@1.10.2` and is now a
    direct dependency.
 
-3. **The Google Maps Drawing library is deprecated upstream** (Google
-   stopped shipping it in Maps JS API 3.65). The app still targets
-   it, so `src/types/google-maps-drawing.d.ts` re-declares the
-   `google.maps.drawing` surface locally (`DrawingManagerOptions`,
-   `DrawingManagerConstructor`, the `DrawingManager` members
-   `setMap` / `setOptions` / `getOptions` / `drawingMode`, and
-   `OverlayCompleteEvent`). Construction sites now cast through
-   `DrawingManagerConstructor` because the upstream class has no
-   constructor of its own — see `features/map/utils/mapUtils.ts` and
-   `features/map-gl/components/Maps.tsx`. **This is a landmine, not
-   a fix**: the drawing feature will stop working the moment Google
-   removes the library from the served API. Porting it to
-   `google.maps.marker` / `AdvancedMarkerElement` is a separate
-   project.
+3. **The Google Maps Drawing library has been removed upstream, and the
+   map feature was migrated off it.** Google deprecated the library in
+   August 2025 and removed the functionality in Maps JS API
+   **v3.65.3b (4 June 2026)**. The served `drawing.js` throws from the
+   constructor on every API version >= 3.65:
+
+   `new google.maps.drawing.DrawingManager({...})` → *"The DrawingManager
+   functionality in the Maps JavaScript API is no longer available in the
+   Maps JavaScript API as of version 3.65."*
+
+   Verified against the live API on 2026-11-19 — a placeholder key is
+   enough, because the namespace still loads with an invalid key:
+
+   | `v=` requested | API actually served | `new DrawingManager(...)` |
+   |---|---|---|
+   | *(none — default)* | 3.67.1b | **throws** |
+   | `3.68` (not released yet) | 3.67.1b *(silent fallback)* | **throws** |
+   | `3.67` | 3.67.1b | **throws** |
+   | `3.66` | 3.66.13d | **throws** |
+   | `3.65` | 3.65.14a | **throws** |
+   | `3.64` | 3.64.14a | **works** |
+   | `3.63` (deleted) | 3.67.1b *(silent fallback)* | **throws** |
+
+   `/map` loaded the default channel because `<APIProvider>` set no
+   `version` prop, so shape drawing had been throwing since June 2026.
+   The call sat inside a `useEffect` with no try/catch, so the error
+   reached the **root** `ErrorBoundary` and replaced the entire app
+   with "Something went wrong. Please refresh the page." — one click
+   on a shape tool white-screened the whole site.
+
+   **What the map feature actually used DrawingManager for:** only an
+   *input device* — a click-to-draw layer. Everything downstream is
+   native Maps API. `handlePolygonComplete` / `handlePolylineComplete` /
+   `handleCircleComplete` / `handleRectangleComplete`
+   (`utils/mapHandlers.ts`) immediately convert the DrawingManager output
+   into the app's own `MapOverlay` model, which stores plain
+   `coordinates: {lat, lng}[]` plus `radius?` for circles. Vertex
+   editing (`editable: true` plus the `set_at` / `insert_at` /
+   `remove_at` path listeners in `utils/mapListeners.ts`), per-overlay
+   click / dblclick / rightclick handlers, `PolyMouseEvent.vertex`, and
+   the `AdvancedMarkerElement` custom-icon markers are all **native
+   `google.maps` overlay APIs** that work fine on 3.67+. The restore
+   path in `hooks/useOverlayManager.ts` was already native.
+
+   So the migration only had to replace the *input* layer.
+   `utils/MapDrawingController.tsx` now drives the drawing itself with
+   map click / double-click / mouse-move listeners:
+
+   | Shape | Interaction |
+   |---|---|
+   | Marker | one click drops the marker |
+   | Polyline | click to add vertices, double click to finish |
+   | Polygon | click to add vertices, double click to finish (closed) |
+   | Circle | click for the centre, click again for the edge (radius) |
+   | Rectangle | click one corner, click again for the opposite corner |
+
+   A rubber-band preview follows the pointer while drawing
+   (`MAP_DRAWING_PREVIEW` in `utils/constants.ts`) and is detached when
+   the shape is committed. Because a double click also fires two
+   `click` events, trailing duplicate vertices are dropped before the
+   shape is finished.
+
+   The shape handlers now take a `MapDrawingSession`
+   (`{ setDrawingEnabled(enabled) }`) instead of a `DrawingManager`
+   reference, so hovering an existing shape can still pause drawing.
+
+   Every drawing entry point is wrapped in a try/catch that sets
+   `drawingUnavailable` in the overlay store. The map toolbar then
+   greys out the shape buttons and shows a short notice instead of
+   letting a failure reach the root `ErrorBoundary` — a map tool must
+   never be able to take down the app shell.
+
+   **Why not Terra Draw** (Google's named replacement)? It is a
+   third-party product ("not supported by Google") and its documented
+   gaps collide with what this app does: no click or double-click
+   listeners on individual features (the app's highlight-on-click and
+   delete-menu wiring rides on those), custom image markers are not
+   supported natively (the app renders `AdvancedMarkerElement` HTML
+   content), circle editing deforms into a polygon (the app stores a
+   `radius`), and there is no `dragend` event. It remains the right
+   choice for a greenfield app or one that wants provider independence.
+
+   **Why not pin `v=3.64`?** It restores the old behaviour but freezes
+   the *whole* `/map` page — Places and Marker included — onto a
+   2024-era API surface, and lapses **silently** after mid-February
+   2027, when Google deletes 3.64 and quietly serves the default
+   channel again. Google calls a version pin a "temporary workaround"
+   that gives "3 to 6 months" and advises against numbered pins.
+
+   `src/types/google-maps-drawing.d.ts` — the local type augmentation
+   that used to keep `tsc` quiet about the deprecated surface — has
+   been deleted, along with the `drawing` entry in the `<APIProvider>`
+   `libraries` prop (now `["places", "marker", "geometry"]`).
 
 4. **react-day-picker v9 → v10 renamed the CSS class names.** The
    `DeprecatedUI` mapping is `nav_button` → `button_previous` +
@@ -1655,7 +1763,10 @@ that the user should be aware of:
   MapTools component").
 - `map/utils/useMapInitialization.ts` runs `loadMapObjectFromLocalStorage()`
   on mount and throws away the result — no-op.
-- `map-gl/` is the older `map/` implementation, not in the router.
+- `map-gl/` is the older `map/` implementation, not in the router. Its
+  drawing toolbar and DrawingManager wiring were removed along with the
+  deprecated Drawing library; it is a reference snapshot, not a live
+  feature.
 - `map/utils/mapListeners.ts` — most of the body is commented out.
 - `multimedia/components/YouTubeCapture.tsx` is fully implemented but
   hidden in the sidebar and not routed in the workspace.
@@ -1707,14 +1818,22 @@ that the user should be aware of:
 
 ### Upstream deprecations (things that will break, not now)
 
-- **Google Maps Drawing library.** Google deprecated it (Aug 2025) and
-  stopped shipping it in Maps JS API 3.65. The `map/` and `map-gl/`
-  features still call `google.maps.drawing.DrawingManager`. The types
-  are currently supplied by a local augmentation in
-  `src/types/google-maps-drawing.d.ts`, so `tsc` is happy — but the
-  runtime call will fail once Google serves an API without the
-  library. Porting to `google.maps.marker.AdvancedMarkerElement` is a
-  separate piece of work, not a dependency bump.
+- **Google Maps Drawing library — RESOLVED.** Google removed the
+  functionality in Maps JS API v3.65.3b (4 June 2026); the served
+  `drawing.js` threw from the `DrawingManager` constructor on every API
+  version ≥ 3.65, so `/map` shape drawing had been broken — and
+  white-screening the whole app via the root `ErrorBoundary` — since
+  June 2026. The map feature now draws on **native** `google.maps`
+  overlays; see `features/map/utils/MapDrawingController.tsx` and §14
+  gotcha 3 for the full migration story. The deprecated
+  `google.maps.drawing` surface, the `drawing` library request and the
+  local type augmentation are all gone from the repo.
+
+  For reference, the Maps JS API serves four versions per quarter and
+  deletes the oldest each time: currently 3.67 (weekly, the default),
+  3.66 (quarterly), 3.65 and 3.64. 3.0–3.63 are already deleted.
+  Requesting an unknown or deleted version does **not** error — it
+  silently falls back to the default channel.
 - **`react-day-picker` v10** dropped the `DeprecatedUI` class names
   that v9 consumers styled against. Already remapped in this repo
   (see §14), but any new day-picker usage must use the v10 names.
