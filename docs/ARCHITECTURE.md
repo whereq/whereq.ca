@@ -1924,10 +1924,14 @@ that the user should be aware of:
   rendered an empty map for every BYOK user with a valid key. The site
   now sends `credentialless`, which keeps `crossOriginIsolated` (and the
   FFmpeg/ONNX SharedArrayBuffer contract) and loads the imagery.
-- **Open — the Geocoder fallback cannot work with a referrer-restricted
-  API key.** Google rejects such keys on the Geocoding web service
-  (*"API keys with referer restrictions cannot be used with this API"*).
-  Only the Places Autocomplete path works in a browser.
+- **Corrected (v1.8.3) — the Geocoder fallback *does* work with a
+  referrer-restricted API key.** Google rejects such keys on the
+  Geocoding *web service* (*"API keys with referer restrictions cannot
+  be used with this API"*), but the map feature geocodes through the
+  *client-side* `google.maps.Geocoder`, which accepts them: measured
+  against the live API with the real key, a free-text search returned a
+  result and placed a marker. Only a server-side Geocoding web-service
+  call would need an IP-restricted key.
 - `tag/components/workspace/Workspace.tsx` imports
   `WhereQTagSection` as `FormatConverterSection` — copy-paste error
   from a `tools/`-to-`tag/` file copy.
