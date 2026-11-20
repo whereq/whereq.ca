@@ -1250,17 +1250,62 @@ Without an API key the page does **not** mount `<APIProvider>` at all —
 it shows a short prompt with an "Open settings" button instead of a map
 covered by Google's "This page can't load Google Maps correctly" overlay.
 
+**Search is our own suggestion list, not Google's widget.**
+`google.maps.places.Autocomplete` was closed to new customers on
+March 1, 2025. Google still loads the class and still answers its
+prediction requests, but it no longer renders the suggestion list: the
+`.pac-container` stays empty and `display:none`, so the user gets a search
+box that silently drops every suggestion. The replacement is
+`AutocompleteSuggestion.fetchAutocompleteSuggestions`, which returns the
+predictions as plain data.
+
+`hooks/useMapSearch.ts` owns that flow:
+
+- a 250 ms debounce before the box asks Google;
+- one autocomplete **session token** per search, so a whole search is
+  billed as one request instead of one per keystroke;
+- a request-id guard, so a slow answer for an older query can never
+  overwrite a newer one (and a cleared box invalidates the request that
+  was still in flight);
+- the `PlacePrediction.toPlace()` → `Place.fetchFields()` resolve that
+  turns a prediction into coordinates, address and display name.
+
+`components/MapSearchBox.tsx` renders the list — MetroUI dark, with
+`role="listbox"` / `role="option"`, arrow keys, Enter and Escape — and is
+shared by `map/` and the legacy `map-gl/` copy.
+
+The **free-text** path is still there: text that matches no suggestion is
+geocoded by the client-side `google.maps.Geocoder`. That one *does* work
+with a browser-referrer-restricted key (the Geocoding **web service**
+does not — see the constraint below). When nothing matches, the toolbar
+shows a short "No match found for that search." notice instead of
+leaving an unhandled promise rejection behind.
+
 **Three constraints come from the user's own Google Cloud setup, not
 from the code:**
 
-- The Geocoder fallback **cannot work with a referrer-restricted key**.
-  Google's Geocoding web service rejects such keys outright
-  (*"API keys with referer restrictions cannot be used with this API"*);
-  only IP-restricted keys are accepted there. The Places Autocomplete
-  path is the one that works in a browser.
-- The API key's HTTP-referrer restrictions must cover the page URL. A
-  key restricted to `http://localhost:4173/` works on the root page but
-  is refused on `http://localhost:4173/map`.
+- The Geocoding **web service** cannot work with a referrer-restricted
+  key — Google rejects such keys outright (*"API keys with referer
+  restrictions cannot be used with this API"*); only IP-restricted keys
+  are accepted there. The Places Autocomplete path and the *client-side*
+  `google.maps.Geocoder` are the ones that work in a browser.
+- The API key's HTTP-referrer restrictions must cover the page URL, and
+  Google compares the **path**. Measured against the live API with the
+  real key:
+  - a **host-level** wildcard (`https://*.whereq.com/*`) authorises every
+    path on that host, including single-segment routes —
+    `https://www.whereq.com/map` and `/lab` are both accepted;
+  - a **path-scoped** wildcard (`https://*.whereq.ca/map/*`) does *not*
+    cover the route itself — it needs at least one more segment after
+    the slash, so `https://www.whereq.ca/map/anything` is accepted while
+    `https://www.whereq.ca/map` and `/map/` are refused with
+    `RefererNotAllowedMapError`;
+  - a bare domain (`https://www.whereq.ca`) authorises only the root.
+  So the entry that covers the map feature is
+  `https://*.whereq.ca/*` (host-level), or `https://www.whereq.ca/*`.
+  The check follows the **current** URL, not the URL the document was
+  loaded at: arriving at `/` and navigating into `/map` client-side is
+  refused just the same.
 - `Cross-Origin-Embedder-Policy: credentialless` (needed for
   `crossOriginIsolated` → SharedArrayBuffer → FFmpeg.wasm / ONNX)
   **is what the site now sends**. The previous value, `require-corp`,
@@ -1287,7 +1332,9 @@ router**. Uses local `useState` for everything, no zustand. The
 `MapDrawingOptions.tsx` is `map/`'s predecessor and explicitly
 deprecated in JSDoc. Its drawing toolbar and DrawingManager wiring were
 removed along with the deprecated Drawing library; the live drawing
-implementation is `features/map/utils/MapDrawingController.tsx`.
+implementation is `features/map/utils/MapDrawingController.tsx`. Its
+search box shares the live `MapSearchBox` component, so the deprecated
+`google.maps.places.Autocomplete` class is gone from the whole repo.
 
 ### `math/`
 
@@ -1919,6 +1966,16 @@ that the user should be aware of:
   3.66 (quarterly), 3.65 and 3.64. 3.0–3.63 are already deleted.
   Requesting an unknown or deleted version does **not** error — it
   silently falls back to the default channel.
+- **Google Maps Places Autocomplete widget — RESOLVED.** Google closed
+  `google.maps.places.Autocomplete` to new customers on March 1, 2025.
+  The class still loads and still answers its prediction requests, but
+  it no longer renders the suggestion list, so `/map` search silently
+  dropped every suggestion. The map feature now uses the modern
+  `AutocompleteSuggestion.fetchAutocompleteSuggestions` API and renders
+  the list itself (`features/map/hooks/useMapSearch.ts` +
+  `features/map/components/MapSearchBox.tsx`); see §13. The deprecated
+  class is gone from the whole repo. `AutocompleteService` is deprecated
+  the same way — use `AutocompleteSuggestion` for new code.
 - **`react-day-picker` v10** dropped the `DeprecatedUI` class names
   that v9 consumers styled against. Already remapped in this repo
   (see §14), but any new day-picker usage must use the v10 names.
