@@ -5,11 +5,9 @@ import LocalStorageHelper from "@/utils/localStorageHelper";
 import { MAX_RECENT_SEARCHES, MAP_LOCAL_STORAGE_KEYS, MAP_DRAWING_COLOR, MAP_CENTER } from "@/features/map/utils/constants";
 
 // Map-related models and types
-import { Map, MapMarker, MapOverlay, MarkerIcon } from "@/features/map/types/types";
+import { Map, MapOverlay, MarkerIcon } from "@/features/map/types/types";
 import { MapType, MapShapeType, MapOverlayType, MarkerIconType } from "@/features/map/models/MapEnum";
 
-// Other types
-import { Place } from "@/features/map/types/types";
 
 export const highlightShape = (shape: google.maps.Polygon | 
                                       google.maps.Polyline |
@@ -320,48 +318,6 @@ export const getLatLngFromPosition = (position: unknown) => {
   return { lat: MAP_CENTER.lat, lng: MAP_CENTER.lng };
 }
 
-export const createPlaceFromGeocoderResult = (
-  searchText: string,
-  geocoderResult: google.maps.GeocoderResult
-): Place => {
-  return {
-    id: uuidv4(),
-    place_id: geocoderResult.place_id || uuidv4(),
-    name: searchText,
-    address: geocoderResult.formatted_address || "",
-    lat: geocoderResult.geometry ?.location?.lat() || 0,
-    lng: geocoderResult.geometry ?.location?.lng() || 0,
-    icon: {type: MarkerIconType.Default, content: ""},
-    url: "",
-  }
-}
-
-export const createPlaceFromPlaceResult = (placeResult: google.maps.places.PlaceResult): Place => {
-  return {
-    id: uuidv4(),
-    place_id: placeResult.place_id || uuidv4(),
-    name: placeResult.name || "",
-    address: placeResult.formatted_address || "",
-    lat: placeResult.geometry?.location?.lat() || 0,
-    lng: placeResult.geometry?.location?.lng() || 0,
-    icon: {type: MarkerIconType.Default, content: ""},
-    url: placeResult.url || "",
-  }
-}
-
-export const createPlaceFromPosition = (position: google.maps.LatLngLiteral): Place => {
-  return {
-    id: uuidv4(),
-    place_id: uuidv4(),
-    name: "",
-    address: "",
-    lat: position.lat,
-    lng: position.lng,
-    icon: {type: MarkerIconType.Default, content: ""},
-    url: ''
-  }
-}
-
 export const createMapOverlayFromGeocoderResult = (
   searchText: string,
   geocoderResult: google.maps.GeocoderResult
@@ -408,50 +364,3 @@ export const createMapOverlayFromResolvedPlace = (place: {
   };
 }
 
-export const createMapOverlayFromPlaceResult = (placeResult: google.maps.places.PlaceResult): MapOverlay => {
-  return {
-    id: uuidv4(),
-    isParent: false,
-    place_id: placeResult.place_id || uuidv4(),
-    title: placeResult.name || "",
-    type: MapOverlayType.Marker,  
-    address: placeResult.formatted_address || "",
-    coordinates: [{ lat: placeResult.geometry?.location?.lat() || MAP_CENTER.lat, 
-                    lng: placeResult.geometry?.location?.lng() || MAP_CENTER.lng }], // Set the coordinates array with the lat and lng from the Place object
-    icon: {type: MarkerIconType.Default, content: ""},
-    url: placeResult.url || "",
-  }
-}
-
-export const createMapOverlayFromPlace = (place: Place): MapOverlay => {
-  const mapOverlay: MapOverlay = {
-    id: place.id || uuidv4(), // Generate a unique ID for the overlay
-    isParent: false, // Set isParent to false
-    place_id: place.place_id, // Use the place_id from the Place object
-    type: MapOverlayType.Marker, // Set the type to Marker
-    title: place.name, // Use the name from the Place object as the title
-    description: place.description || '', // Use the description from the Place object (if available)
-    coordinates: [{ lat: place.lat, lng: place.lng }], // Set the coordinates array with the lat and lng from the Place object
-    icon: place.icon, // Use the icon from the Place object
-  };
-
-  return mapOverlay;
-}
-
-export const createMapOverlayFromMapMarker = (mapMarker: MapMarker): MapOverlay => {
-  const position = mapMarker.advancedMarker.position;
-  const positionCoordinate = getLatLngFromPosition(position);
-
-  const mapOverlay: MapOverlay = {
-    id: mapMarker.id || uuidv4(), // Generate a unique ID for the overlay
-    isParent: false, // Set isParent to false
-    place_id: mapMarker.id, // Use the place_id from the Place object
-    type: MapOverlayType.Marker, // Set the type to Marker
-    title: '', // Use the name from the Place object as the title
-    description: '', // Use the description from the Place object (if available)
-    coordinates: [{ lat: positionCoordinate.lat, lng: positionCoordinate.lng }], // Set the coordinates array with the lat and lng from the Place object
-    icon: mapMarker.icon, // Use the icon from the Place object
-  };
-
-  return mapOverlay;
-}

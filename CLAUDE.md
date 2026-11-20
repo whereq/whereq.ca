@@ -91,7 +91,6 @@ Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon v
 - `utils/logUtil.ts` self-recurses (`log` calls `log`); also gated by `VITE_ENV === "test"` which is never set, so it's a no-op.
 - `calendar/` writes the same events to TWO `localStorage` keys (one manual, one via zustand `persist`). The in-memory `events` array is dead code.
 - `multimedia/YouTubeCapture.tsx` (738 lines) is fully implemented but hidden in the sidebar and not routed in the workspace (mainland China / corporate firewalls block YouTube).
-- `map-gl/` is the older `map/` implementation, not wired in the router.
 - `api-executor/ApiExecutor.tsx` imports `axios` but uses `fetch` (dead import).
 - Many zero-byte placeholders (`MainLayout.tsx`, `AuthLayout.tsx`, `useWindowSize.ts`, `apiClient.ts`, `middleware.ts`, `rootReducer.ts`, `FormularAnimation.tsx`, `catFactSlice.ts`).
 
