@@ -380,6 +380,34 @@ export const createMapOverlayFromGeocoderResult = (
   }
 }
 
+/**
+ * Builds an overlay from a place resolved through the modern Places API
+ * (`AutocompleteSuggestion` → `PlacePrediction.toPlace()`).
+ *
+ * The modern `google.maps.places.Place` exposes `displayName`,
+ * `formattedAddress` and `location` (a `LatLng`), while the legacy
+ * `PlaceResult` used `name`, `formatted_address` and `geometry.location`.
+ */
+export const createMapOverlayFromResolvedPlace = (place: {
+  title: string;
+  address: string;
+  lat: number;
+  lng: number;
+  placeId: string;
+}): MapOverlay => {
+  return {
+    id: uuidv4(),
+    isParent: false,
+    place_id: place.placeId || uuidv4(),
+    title: place.title || "",
+    type: MapOverlayType.Marker,
+    address: place.address || "",
+    coordinates: [{ lat: place.lat, lng: place.lng }],
+    icon: { type: MarkerIconType.Default, content: "" },
+    url: "",
+  };
+}
+
 export const createMapOverlayFromPlaceResult = (placeResult: google.maps.places.PlaceResult): MapOverlay => {
   return {
     id: uuidv4(),

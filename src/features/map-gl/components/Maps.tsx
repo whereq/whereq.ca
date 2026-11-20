@@ -14,7 +14,8 @@ import { BASE_KEY } from "@/features/map-gl/utils/constants";
 import { readGoogleMapCredentials } from "@/features/map/utils/mapCredentials";
 import PlaceInfoModal from "@/features/map-gl/components/PlaceInfoModal";
 import CustomModal from "@/components/modals/CustomModal"; // Import the CustomModal component
-import { MAP_EVENT } from "@/features/map/utils/constants";
+import MapSearchBox from "@/features/map/components/MapSearchBox";
+import type { ResolvedMapPlace } from "@/features/map/hooks/useMapSearch";
 
 const center = {
     lat: 43.6532,
@@ -24,48 +25,12 @@ const center = {
 const MapHandler: React.FC<{
     markerPosition: google.maps.LatLngLiteral | null;
     setIsModalOpen: (isOpen: boolean) => void;
-    autoCompleteRef: React.MutableRefObject<google.maps.places.Autocomplete | null>;
-    setSearchText: (text: string) => void;
-    handleSearch: () => void; // Add handleSearch to props
 }> = ({
     markerPosition,
     setIsModalOpen,
-    autoCompleteRef,
-    setSearchText,
-    handleSearch,
 }) => {
     const map = useMap(); // Use the useMap hook inside the MapHandler component
     const advancedMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null); // Define advancedMarkerRef
-
-    useEffect(() => {
-        const checkGoogleMapsLoaded = () => {
-            if (window.google && window.google.maps && window.google.maps.places) {
-                const autocompleteInstance = new google.maps.places.Autocomplete(
-                    document.getElementById("mapSearch") as HTMLInputElement,
-                    {
-                        types: ["geocode"],
-                    }
-                );
-
-                autocompleteInstance.addListener(MAP_EVENT.PLACE_CHANGED, () => {
-                    const selectedPlace = autocompleteInstance.getPlace();
-                    if (selectedPlace && selectedPlace.formatted_address) {
-                        setSearchText(selectedPlace.formatted_address);
-                        autoCompleteRef.current = autocompleteInstance;
-                        handleSearch(); // Trigger search when a place is selected
-                    } else {
-                        console.warn("Place information is incomplete or unavailable.");
-                    }
-                });
-
-                autoCompleteRef.current = autocompleteInstance;
-            } else {
-                setTimeout(checkGoogleMapsLoaded, 100);
-            }
-        };
-
-        checkGoogleMapsLoaded();
-    }, []);
 
     useEffect(() => {
         if (markerPosition && map && window.google.maps.marker) {
@@ -92,7 +57,6 @@ const MapHandler: React.FC<{
 
 const Maps: React.FC = () => {
     const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
-    const [searchText, setSearchText] = useState("");
     const [markerPosition, setMarkerPosition] = useState<google.maps.LatLngLiteral | null>(null);
     const [infoWindowContent, setInfoWindowContent] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,38 +66,27 @@ const Maps: React.FC = () => {
     const [mapZoom, setMapZoom] = useState<number>(12);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false); // State for the search modal
 
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-
     const handleLayerSwitch = () => {
         setMapType((prevType) => (prevType === "roadmap" ? "satellite" : "roadmap"));
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            // Trigger search when Enter is pressed
-            if (autoCompleteRef.current) {
-                autoCompleteRef.current.getPlace();
-            }
-        }
+    /**
+     * A place was picked from the suggestion list (Places Autocomplete).
+     */
+    const handlePlaceSelected = (place: ResolvedMapPlace) => {
+        setMarkerPosition({ lat: place.lat, lng: place.lng });
+        setInfoWindowContent(place.address || "Address not available");
+        saveSearchToLocalStorage(place.address || place.title);
+
+        // Update the map center and zoom
+        setMapCenter({ lat: place.lat, lng: place.lng });
+        setMapZoom(15);
     };
 
-    const handleSearch = () => {
-        if (autoCompleteRef.current) {
-            const place = autoCompleteRef.current.getPlace();
-            if (place && place.geometry && place.geometry.location) {
-                const location = place.geometry.location;
-                setMarkerPosition({ lat: location.lat(), lng: location.lng() });
-                setInfoWindowContent(place.formatted_address || "Address not available");
-                saveSearchToLocalStorage(place.formatted_address || searchText);
-
-                // Update the map center and zoom
-                setMapCenter({ lat: location.lat(), lng: location.lng() });
-                setMapZoom(15);
-                return;
-            }
-        }
-
+    /**
+     * Free text that matched no suggestion: geocode it.
+     */
+    const handleSearchText = (searchText: string) => {
         const geocoder = new google.maps.Geocoder();
         const address = searchText.trim() === "" ? "Toronto, Ontario, Canada" : `${searchText}, Ontario, Canada`;
 
@@ -164,11 +117,11 @@ const Maps: React.FC = () => {
         localStorage.setItem("recentSearches", JSON.stringify(updatedSearches));
     };
 
-    const handleSearchButtonClick = () => {
+    const handleSearchButtonClick = (searchText: string) => {
         if (searchText.trim() === "") {
             setIsSearchModalOpen(true); // Show the modal if the search box is empty
         } else {
-            handleSearch();
+            handleSearchText(searchText);
         }
     };
 
@@ -187,9 +140,6 @@ const Maps: React.FC = () => {
                     <MapHandler
                         markerPosition={markerPosition}
                         setIsModalOpen={setIsModalOpen}
-                        autoCompleteRef={autoCompleteRef}
-                        setSearchText={setSearchText}
-                        handleSearch={handleSearch} 
                     />
 
                     <button
@@ -201,23 +151,12 @@ const Maps: React.FC = () => {
                     </button>
 
                     <div className="absolute top-4 left-4 flex items-center space-x-2 bg-gray-900 text-orange-500 p-2 rounded shadow-md">
-                        <input
-                            id="mapSearch"
-                            type="text"
-                            placeholder="Search Google Maps"
-                            className="bg-gray-800 text-orange-500 text-sm p-1 rounded focus:outline-none w-64"
-                            style={{ fontFamily: "Fira Code, monospace" }}
-                            ref={inputRef}
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                            onKeyDown={handleKeyDown}
+                        <MapSearchBox
+                            showSearchButton
+                            inputClassName="w-64 rounded"
+                            onSelectPlace={handlePlaceSelected}
+                            onSubmitText={handleSearchButtonClick}
                         />
-                        <button
-                            onClick={handleSearchButtonClick}
-                            className="bg-gray-700 p-1 text-sm rounded shadow hover:bg-gray-600"
-                        >
-                            Search
-                        </button>
                         {/* NOTE: the drawing toolbar was removed from this legacy copy
                             along with the deprecated Google Maps Drawing library. The live
                             map feature lives in `features/map` — see

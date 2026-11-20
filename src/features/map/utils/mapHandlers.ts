@@ -4,23 +4,15 @@ import { highlightShape, highlightMarker,
          createMarkerWithText, 
                 saveSearchToLocalStorage, 
          makeDefaultMarkderContent,
-         createMapOverlayFromPlaceResult,
          createMapOverlayFromGeocoderResult,
          getLatLngFromPosition,
          createResizableMarkerWithImgUrl} from "@/features/map/utils/mapUtils";
 import { MapOverlay, MarkerIcon } from "@/features/map/types/types";
 import { MapOverlayType } from "@/features/map/models/MapEnum";
-import { DEFAULT_CITY, DEFAULT_PROVINCE, MAP_DRAWING_COLOR, MAP_EVENT } from "@/features/map/utils/constants";
+import { DEFAULT_PROVINCE, MAP_DRAWING_COLOR, MAP_EVENT } from "@/features/map/utils/constants";
 import { MarkerIconType } from "@/features/map/models/MapEnum";
 import { eventEmitter } from "@/utils/eventEmitter";
 import logUtil from "@/utils/logUtil";
-
-interface HandleSearchParams {
-  searchText: string;
-  autoCompleteInstance: google.maps.places.Autocomplete | null;
-  setPlaceMapOverlay: (place: MapOverlay | null) => void;
-  setClickedOverlay: (clickedOverlay: MapOverlay | null) => void;
-}
 
 /**
  * The live drawing session, handed to the shape handlers so they can pause
@@ -36,35 +28,38 @@ export interface MapDrawingSession {
   setDrawingEnabled: (enabled: boolean) => void;
 }
 
+/**
+ * Free-text search: geocode what the user typed.
+ *
+ * The suggestion list (Places Autocomplete) covers the places the user
+ * picks; this is the fallback for plain text that matches no suggestion.
+ * The client-side `Geocoder` works with a browser-referrer-restricted API
+ * key, unlike the Geocoding web service, which only accepts IP-restricted
+ * keys.
+ *
+ * Returns `null` when nothing matched - the caller shows the notice. It
+ * never rejects, so neither the Search button nor the Enter key can leave an
+ * unhandled rejection behind.
+ */
 export const handleSearch = async ({
   searchText,
-  autoCompleteInstance,
   setPlaceMapOverlay,
   setClickedOverlay,
-}: HandleSearchParams): Promise<MapOverlay | null> => {
-
-  let searchedPlace: MapOverlay | null = null;
-  // If searchText is empty and autoCompleteInstance is valid, use the autoCompleteInstance
-  if (searchText.trim() === "" && autoCompleteInstance) {
-    const placeResult = autoCompleteInstance.getPlace();
-    if (placeResult) {
-      searchedPlace = createMapOverlayFromPlaceResult(placeResult);
-      setPlaceMapOverlay(searchedPlace);
-    }
-  }
-  // If searchText is not empty and autoCompleteInstance is valid, check if the placeResult matches the searchText
-  else if (autoCompleteInstance) {
-    const placeResult = autoCompleteInstance.getPlace();
-    if (placeResult && placeResult.name === searchText) {
-      searchedPlace = createMapOverlayFromPlaceResult(placeResult);
-      setPlaceMapOverlay(searchedPlace);
-    }
+}: {
+  searchText: string;
+  setPlaceMapOverlay: (place: MapOverlay | null) => void;
+  setClickedOverlay: (clickedOverlay: MapOverlay | null) => void;
+}): Promise<MapOverlay | null> => {
+  const trimmed = searchText.trim();
+  if (!trimmed) {
+    return null;
   }
 
-
-  if (!searchedPlace) {
+  try {
     const geocoder = new google.maps.Geocoder();
-    const address = searchText.trim() === "" ? `${DEFAULT_CITY}` : `${searchText}, ${DEFAULT_PROVINCE}`;
+    // DEFAULT_PROVINCE already carries its own leading comma.
+    const address = `${trimmed}${DEFAULT_PROVINCE}`;
+
     const geocoderResults = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
       geocoder.geocode({ address }, (results, status) => {
         if (status === "OK" && results) {
@@ -75,20 +70,23 @@ export const handleSearch = async ({
       });
     });
 
-    if (geocoderResults[0]?.geometry?.location) {
-      searchedPlace = createMapOverlayFromGeocoderResult(searchText, geocoderResults[0]);
-      setPlaceMapOverlay(searchedPlace);
+    if (!geocoderResults[0]?.geometry?.location) {
+      return null;
     }
-  }
 
-  if (searchedPlace) {
-    // Reset the clickedOverlay in the overlay store 
+    const searchedPlace = createMapOverlayFromGeocoderResult(trimmed, geocoderResults[0]);
+
+    // Reset the clickedOverlay in the overlay store
     // so when click the MapOverlay in MyMapSection, the hook will respond
-    setClickedOverlay(null); 
+    setClickedOverlay(null);
+    setPlaceMapOverlay(searchedPlace);
     saveSearchToLocalStorage(searchedPlace);
+
     return searchedPlace;
+  } catch {
+    // No match, or the geocoder refused the request.
+    return null;
   }
-  return null;
 };
 
 export const handlePolygonComplete = (
