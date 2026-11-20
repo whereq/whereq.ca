@@ -28,7 +28,7 @@ it is, with enough specifics to be actionable.
 10. [Inter-component messaging — pub/sub](#10-inter-component-messaging--pubsub)
 11. [Analytics — GA4](#11-analytics--ga4)
 12. [The Multimedia feature group (deep dive)](#12-the-multimedia-feature-group-deep-dive)
-13. [The other 14 features (one-paragraph maps)](#13-the-other-14-features-one-paragraph-maps)
+13. [The other 13 features (one-paragraph maps)](#13-the-other-13-features-one-paragraph-maps)
 14. [Configuration — Vite, Vercel, env, TypeScript, ESLint](#14-configuration--vite-vercel-env-typescript-eslint)
 15. [Cross-cutting libraries](#15-cross-cutting-libraries)
 16. [Deployment, headers, and the COOP/COEP contract](#16-deployment-headers-and-the-coopcoep-contract)
@@ -92,7 +92,6 @@ will hit the router's default empty state, not the existing `NotFound` page.
 | `category` | `/category` | stub | tag-manager skeleton |
 | `chemistry` | `/chemistry` | full | interactive periodic table from bundled YAML |
 | `map` | `/map` | full | Google Maps with search + drawing + saved overlays |
-| `map-gl/` | (unwired) | full | an older `map` implementation, kept for reference |
 | `math` | `/math` | full | calculator + formula wiki + canvas math animations |
 | `multimedia` | `/multimedia` | full | image/GIF/video tools, ffmpeg.wasm-backed (the flagship) |
 | `paws` | `/paws` | stub | cats-and-dogs skeleton |
@@ -178,7 +177,6 @@ whereq.ca/
 │   │   ├── category/                ← stub
 │   │   ├── chemistry/               ← periodic table
 │   │   ├── map/                     ← Google Maps (active)
-│   │   ├── map-gl/                  ← Google Maps (legacy, unwired)
 │   │   ├── math/                    ← calculator + formulas + canvas anims
 │   │   ├── multimedia/              ← the flagship (image/GIF/video)
 │   │   ├── paws/                    ← stub
@@ -1081,7 +1079,7 @@ uploaded images into a PDF, entirely in the browser, using `pdf-lib`
 
 ---
 
-## 13. The other 14 features (one-paragraph maps)
+## 13. The other 13 features (one-paragraph maps)
 
 ### `academy/` — stub
 
@@ -1272,7 +1270,7 @@ predictions as plain data.
 
 `components/MapSearchBox.tsx` renders the list — MetroUI dark, with
 `role="listbox"` / `role="option"`, arrow keys, Enter and Escape — and is
-shared by `map/` and the legacy `map-gl/` copy.
+the only map implementation left in the repo.
 
 The **free-text** path is still there: text that matches no suggestion is
 geocoded by the client-side `google.maps.Geocoder`. That one *does* work
@@ -1325,16 +1323,14 @@ The app deliberately centers on Toronto (`MAP_CENTER = {lat:43.6532,
 lng:-79.3832}`) and defaults geocoder lookups to "Ontario, Canada" —
 a Canadian-centric app.
 
-### `map-gl/` — unwired legacy
+### `map-gl/` — REMOVED (v1.8.1)
 
-An older, simpler Google Maps implementation that **is not in the
-router**. Uses local `useState` for everything, no zustand. The
-`MapDrawingOptions.tsx` is `map/`'s predecessor and explicitly
-deprecated in JSDoc. Its drawing toolbar and DrawingManager wiring were
-removed along with the deprecated Drawing library; the live drawing
-implementation is `features/map/utils/MapDrawingController.tsx`. Its
-search box shares the live `MapSearchBox` component, so the deprecated
-`google.maps.places.Autocomplete` class is gone from the whole repo.
+An older, simpler Google Maps implementation that was never in the
+router. It was deleted in v1.8.1 once the live search box was shared
+with it: with one map implementation left, the copy could only be
+maintained twice or abandoned. The dead `MapDrawingOptions.tsx`
+toolbar, the unused `DeleteMenu` / `PlaceInfoModal` components and six
+orphaned `mapUtils` builders went with it.
 
 ### `math/`
 
@@ -1871,15 +1867,8 @@ that the user should be aware of:
 - `tools/components/PythonCodeFormatter.tsx` and `PythonCodeFormatterTA.tsx`
   are 177/138 lines each, point at a self-hosted Pyodide path that's
   likely broken. Not wired in.
-- `map/components/MapDrawingOptions.tsx` is explicitly marked
-  deprecated in JSDoc ("All of the features have been moved to the
-  MapTools component").
 - `map/utils/useMapInitialization.ts` runs `loadMapObjectFromLocalStorage()`
   on mount and throws away the result — no-op.
-- `map-gl/` is the older `map/` implementation, not in the router. Its
-  drawing toolbar and DrawingManager wiring were removed along with the
-  deprecated Drawing library; it is a reference snapshot, not a live
-  feature.
 - `map/utils/mapListeners.ts` — most of the body is commented out.
 - `multimedia/components/YouTubeCapture.tsx` is fully implemented but
   hidden in the sidebar and not routed in the workspace.
@@ -1991,8 +1980,6 @@ These would be obvious refactoring candidates:
   6+ stub features.
 - The "Section + header with trash button" panel placeholder appears
   in 15+ files across the stubs.
-- The "API Key / Google Map ID" settings panel is duplicated almost
-  verbatim between `map/` and `map-gl/`.
 - The "Sidebar + Workspace + SettingsPanel" boilerplate is shared
   by ~7 features (api-explorer, calendar, category, math, paws,
   physics, tag, tools) with only the SectionType enum and icons
