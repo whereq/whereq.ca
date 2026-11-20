@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faRuler,
@@ -17,15 +17,18 @@ import {
 import { usePlaceStore, useMapToolStore, useOverlayStore } from "@/features/map/store/mapStore";
 import { handleSearch } from "@/features/map/utils/mapHandlers";
 import { MapOverlayType, MapToolMode, OverlayModalMode } from "@/features/map/models/MapEnum";
-import { mapOverlayToShape } from "@/features/map/utils/mapUtils";
-import logUtil from "@/utils/logUtil";
-import { useMapSearch } from "@/features/map/hooks/useMapSearch"; // Import the custom hook
+import {
+    createMapOverlayFromResolvedPlace,
+    mapOverlayToShape,
+    saveSearchToLocalStorage,
+} from "@/features/map/utils/mapUtils";
+import MapSearchBox from "@/features/map/components/MapSearchBox";
+import type { ResolvedMapPlace } from "@/features/map/hooks/useMapSearch";
 
 
 const MapTools : React.FC = () => {
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    const [searchText, setSearchText] = useState("");
-    const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+    /** Short notice under the toolbar (e.g. "no match found"). */
+    const [searchNotice, setSearchNotice] = useState<string | null>(null);
 
     const { placeMapOverlay, setPlaceMapOverlay } = usePlaceStore();
     const { mapToolMode, setMapToolMode } = useMapToolStore();
@@ -40,37 +43,29 @@ const MapTools : React.FC = () => {
         drawingUnavailable,
     } = useOverlayStore();
 
-    // Memoize the callback to avoid unnecessary re-renders
-    const handlePlaceSelected = useCallback((address: string) => {
-        setSearchText(address);
-    }, []);
+    /**
+     * A place was picked from the suggestion list: turn it into an overlay so
+     * the map drops a marker, pans there and stores it in the recent searches.
+     */
+    const handlePlaceSelected = useCallback((place: ResolvedMapPlace) => {
+        const overlay = createMapOverlayFromResolvedPlace(place);
+        setPlaceMapOverlay(overlay);
+        setClickedOverlay(null);
+        saveSearchToLocalStorage(overlay);
+        setSearchNotice(null);
+    }, [setPlaceMapOverlay, setClickedOverlay]);
 
-    // Use the custom hook for handling autocomplete and place selection
-    useMapSearch(inputRef, handlePlaceSelected);
-
-    // Handle search logic
-    const _handleSearch = useCallback(() => {
-        logUtil.log("Search triggered:", searchText);
-        handleSearch({
-            searchText,
-            autoCompleteInstance: autoCompleteRef.current,
+    /**
+     * Free text that matched no suggestion: geocode it.
+     */
+    const handleSearchText = useCallback(async (text: string) => {
+        const result = await handleSearch({
+            searchText: text,
             setPlaceMapOverlay,
             setClickedOverlay,
         });
-    }, [searchText, setPlaceMapOverlay, setClickedOverlay]);
-
-    // Handle Enter key press
-    const _handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            logUtil.log("Enter key pressed", searchText);
-            handleSearch({
-                searchText,
-                autoCompleteInstance: autoCompleteRef.current,
-                setPlaceMapOverlay,
-                setClickedOverlay,
-            });
-        }
-    };
+        setSearchNotice(result ? null : "No match found for that search.");
+    }, [setPlaceMapOverlay, setClickedOverlay]);
 
     // Handle placeSearchResult changes
     useEffect(() => {
@@ -110,23 +105,11 @@ const MapTools : React.FC = () => {
         <div className="absolute top-0 left-0 flex flex-col items-start 
                         space-y-1 bg-gray-900 text-orange-500 p-1">
             <div className="flex items-center space-x-1">
-                <input
-                    id="mapSearch"
-                    type="text"
-                    placeholder="Search Google Maps"
-                    className="bg-gray-800 text-orange-500 text-sm p-1 focus:outline-none w-64"
-                    style={{ fontFamily: "Fira Code, monospace" }}
-                    ref={inputRef}
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    onKeyDown={_handleKeyDown}
+                <MapSearchBox
+                    showSearchButton
+                    onSelectPlace={handlePlaceSelected}
+                    onSubmitText={handleSearchText}
                 />
-                <button
-                    onClick={_handleSearch}
-                    className="bg-gray-700 p-1 text-sm hover:bg-gray-600"
-                >
-                    Search
-                </button>
             </div>
             <div className="flex space-x-1 text-sm bg-gray-800 p-1">
                 <button
@@ -221,6 +204,11 @@ const MapTools : React.FC = () => {
             {drawingUnavailable && (
                 <div className="bg-gray-900 text-orange-300 text-xs px-2 py-1 rounded shadow">
                     Drawing tools are unavailable right now. Try again in a moment.
+                </div>
+            )}
+            {searchNotice && (
+                <div className="bg-gray-900 text-orange-300 text-xs px-2 py-1 rounded shadow">
+                    {searchNotice}
                 </div>
             )}
         </div>
