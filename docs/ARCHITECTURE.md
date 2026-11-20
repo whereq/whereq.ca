@@ -1272,6 +1272,19 @@ predictions as plain data.
 `role="listbox"` / `role="option"`, arrow keys, Enter and Escape — and is
 the only map implementation left in the repo.
 
+**Advanced markers follow Google's current element API.** Two rules, both
+enforced by the console on a vector map (and invisible on the raster
+fallback, which is why they went unnoticed):
+
+- A marker is clicked through the **`gmp-click`** event on the marker
+  itself, not `addEventListener("click", ...)` on the marker's DOM
+  element. `AdvancedMarkerElement.element` is deprecated for the same
+  reason ("use the AdvancedMarkerElement directly"). The event only
+  fires when the marker was created with **`gmpClickable: true`**,
+  which is also what makes the marker keyboard reachable.
+- The pin is the **`PinElement` itself**: `marker.content = pinElement`.
+  `PinElement.element` is deprecated ("use the PinElement directly").
+
 The **free-text** path is still there: text that matches no suggestion is
 geocoded by the client-side `google.maps.Geocoder`. That one *does* work
 with a browser-referrer-restricted key (the Geocoding **web service**
