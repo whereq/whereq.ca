@@ -1248,6 +1248,31 @@ Without an API key the page does **not** mount `<APIProvider>` at all —
 it shows a short prompt with an "Open settings" button instead of a map
 covered by Google's "This page can't load Google Maps correctly" overlay.
 
+**The deployment can ship a key of its own, as a fallback.**
+`readGoogleMapCredentials()` resolves *saved* credentials first and falls
+back to `VITE_GOOGLE_MAPS_API_KEY` / `VITE_GOOGLE_MAPS_MAP_ID` (read from
+`import.meta.env` at build time) when the visitor has saved nothing. The
+BYOK model is unchanged: a key the visitor saved in the settings panel
+always wins, and the panel still accepts an override.
+
+Three consequences worth knowing:
+
+- **The bundled key is public.** Vite inlines every `VITE_*` variable into
+  the client bundle, so the deployment's API key is readable by anyone who
+  opens the site. That is normal for a browser app and is not a leak —
+  the protection is the key's own restrictions (API restrictions +
+  website/referrer restrictions in the Cloud Console) plus a billing alert,
+  not secrecy.
+- **It is a build-time value.** Changing the env var requires a new
+  deployment; a runtime change to the Vercel project has no effect until
+  the next build.
+- **The shared key is not copied into the visitor's storage.** When the
+  settings panel saves a field that still holds the deployment's own value,
+  it stores an empty string instead, so this browser keeps following the
+  deployment rather than holding a frozen copy that would keep winning
+  after the deployment key is rotated. The panel also says whether the map
+  is currently running on the shared WhereQ key.
+
 **Search is our own suggestion list, not Google's widget.**
 `google.maps.places.Autocomplete` was closed to new customers on
 March 1, 2025. Google still loads the class and still answers its
@@ -1552,12 +1577,20 @@ release gate compares them) and re-running the FFmpeg smoke test. See
 
 ### `.env.example`
 
-Single env var:
-- `VITE_GA_MEASUREMENT_ID` — optional Google Analytics 4 measurement
+Three env vars:
+
+- `VITE_GA4_MEASUREMENT_ID` — optional Google Analytics 4 measurement
   ID. If unset, `initAnalytics()` is a no-op (the app is 100%
   functional without it).
+- `VITE_GOOGLE_MAPS_API_KEY` — optional Google Maps API key the `/map`
+  feature falls back to when the visitor has not saved one of their own.
+- `VITE_GOOGLE_MAPS_MAP_ID` — optional cloud-styled map ID used by the
+  same fallback. Not a secret.
 
-No other env vars. The lab is intended to work without configuration.
+The two Maps values are the deployment's own credentials: they are read
+from `import.meta.env` at build time, and Vite inlines them into the
+client bundle, so the key is public (see §13 `map/`). Everything else in
+the lab is intended to work without configuration.
 
 ### `tsconfig.app.json`
 
@@ -2298,12 +2331,20 @@ features work without a network race after first load. See §17
 
 ### 19.4 Environment variables
 
-Only **one** runtime env var matters:
+Three env vars matter:
 
 | Var | Required in prod? | Where to set |
 |-----|-------------------|--------------|
 | `VITE_GA4_MEASUREMENT_ID` | Optional (analytics is no-op without it) | Vercel env vars (Production only) |
+| `VITE_GOOGLE_MAPS_API_KEY` | Optional (the map falls back to the visitor's own saved key; without either, `/map` asks for a key) | Vercel env vars (Production + Preview) |
+| `VITE_GOOGLE_MAPS_MAP_ID` | Optional (same as above) | Vercel env vars (Production + Preview) |
 | `VITE_ENV` | No — used to gate `utils/logUtil.ts`'s `log()` recursion bug | Never set it |
+
+**The two Maps vars are build-time values.** Vercel injects them into the
+build, and Vite inlines them into the client bundle — so changing them
+needs a redeploy, not just a variable edit. Because they land in the
+bundle, the API key is public by design; restrict it in the Cloud Console
+and put a billing alert on the project. See §13 `map/` for the resolver.
 
 **The `.env.example` file documents the GA4 setup.** Vite only
 exposes env vars prefixed `VITE_` to the client bundle, so the GA
