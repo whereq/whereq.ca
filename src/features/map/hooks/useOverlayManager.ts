@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { MapOverlay } from "@/features/map/types/types";
 import { calculateMapOverlayBounds, highlightShape } from "@/features/map/utils/mapUtils";
 import { MapOverlayType } from "@/features/map/models/MapEnum";
-import { MAP_DRAWING_COLOR, MAP_EVENT } from "@/features/map/utils/constants";
+import { MAP_DRAWING_COLOR } from "@/features/map/utils/constants";
 import { useOverlayStore } from "@/features/map/store/mapStore";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { updateMarkerIcon } from "@/features/map/utils/mapHandlers";
@@ -28,15 +28,18 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                     const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
                         map: mapRef.current,
                         position: overlay.coordinates[0],
+                        // Makes the marker clickable and keyboard reachable;
+                        // the click arrives as the `gmp-click` event.
+                        gmpClickable: true,
                     });
 
-                    const markerElement = advancedMarker.element;
-                    if (markerElement) {
-                        markerElement.addEventListener(MAP_EVENT.CLICK, () => {
-                            // Do nothing for now
-                            logUtil.log("Marker clicked");
-                        });
-                    }
+                    // `addEventListener("click", ...)` on the marker's DOM
+                    // element is deprecated by Google - the marker itself is
+                    // the event target, and the event is `gmp-click`.
+                    advancedMarker.addEventListener("gmp-click", () => {
+                        // Do nothing for now
+                        logUtil.log("Marker clicked");
+                    });
 
                     // Update the marker icon no matter newly created or existing marker
                     if (overlay.icon) {
