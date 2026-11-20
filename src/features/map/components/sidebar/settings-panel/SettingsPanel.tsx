@@ -3,7 +3,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faUndo, faSave } from "@fortawesome/free-solid-svg-icons";
 import CustomModal from "@/components/modals/CustomModal"; // Import the reusable modal
 import { API_KEY, GOOGLE_MAP_ID, MAP_LOCAL_STORAGE_KEYS } from "@/features/map/utils/constants";
-import { readGoogleMapCredentials } from "@/features/map/utils/mapCredentials";
+import {
+    hasDeploymentMapCredentials,
+    readDeploymentMapCredentials,
+    readGoogleMapCredentials,
+    readSavedMapCredentials,
+} from "@/features/map/utils/mapCredentials";
 import LocalStorageHelper from "@/utils/localStorageHelper";
 import React from "react";
 
@@ -29,9 +34,18 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
         ];
     });
     const [unsavedChanges, setUnsavedChanges] = useState(false);
+    // True while the map is running on the shared WhereQ key that ships with
+    // the site, rather than on a key the visitor entered themselves.
+    const [isUsingSharedKey] = useState(
+        () => hasDeploymentMapCredentials() && readSavedMapCredentials().apiKey === ""
+    );
     // The credentials as they are currently stored, used to detect whether a
     // save actually changed the key or the map ID.
-    const savedCredentialsRef = useRef(readGoogleMapCredentials());
+    //
+    // This deliberately tracks the *saved* credentials only, not the effective
+    // ones: the deployment's own key and map ID are not "the user's settings",
+    // so saving them back must not look like a change.
+    const savedCredentialsRef = useRef(readSavedMapCredentials());
     const [modalInfo, setModalInfo] = useState<{
         isOpen: boolean;
         title?: string;
@@ -61,25 +75,56 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleSave = () => {
+        const deployment = readDeploymentMapCredentials();
+
         const settingsToSave = rows.reduce((acc, row) => {
             // An untouched field still holds its placeholder text. Saving that
             // would store the placeholder as the actual credential.
             const isPlaceholder = row.value === "Enter Your Google Map API Key"
                 || row.value === "Enter Your Google Map ID";
-            acc[row.key] = isPlaceholder ? "" : row.value;
+            acc[row.key] = isPlaceholder ? "" : row.value.trim();
             return acc;
         }, {} as Record<string, string>);
-        LocalStorageHelper.saveSetting(MAP_LOCAL_STORAGE_KEYS.BASE_KEY, settingsToSave);
+
+        // A field that still holds the deployment's own value is not copied
+        // into this browser's storage. Storing it would freeze a private copy
+        // of the shared key here, and that copy would keep winning over the
+        // deployment value even after the deployment key is rotated. Leaving
+        // the field empty keeps this browser following the deployment.
+        const storedApiKey = deployment.apiKey && settingsToSave[API_KEY] === deployment.apiKey
+            ? ""
+            : settingsToSave[API_KEY];
+        const storedMapId = deployment.mapId && settingsToSave[GOOGLE_MAP_ID] === deployment.mapId
+            ? ""
+            : settingsToSave[GOOGLE_MAP_ID];
+
+        LocalStorageHelper.saveSetting(MAP_LOCAL_STORAGE_KEYS.BASE_KEY, {
+            ...settingsToSave,
+            [API_KEY]: storedApiKey,
+            [GOOGLE_MAP_ID]: storedMapId,
+        });
         setUnsavedChanges(false);
 
         const previous = savedCredentialsRef.current;
         const next = {
-            apiKey: settingsToSave[API_KEY] || "",
-            mapId: settingsToSave[GOOGLE_MAP_ID] || "",
+            apiKey: storedApiKey,
+            mapId: storedMapId,
         };
         savedCredentialsRef.current = next;
 
-        if (previous.apiKey !== next.apiKey || previous.mapId !== next.mapId) {
+        // Only an effective change matters: the map is loaded once per page
+        // load, so it only needs a reload when the key or the map ID that will
+        // actually be used differs from the one in use now.
+        const effectiveBefore = {
+            apiKey: previous.apiKey || deployment.apiKey,
+            mapId: previous.mapId || deployment.mapId,
+        };
+        const effectiveAfter = {
+            apiKey: next.apiKey || deployment.apiKey,
+            mapId: next.mapId || deployment.mapId,
+        };
+
+        if (effectiveBefore.apiKey !== effectiveAfter.apiKey || effectiveBefore.mapId !== effectiveAfter.mapId) {
             // The Maps JavaScript API is loaded only once per page load, so a
             // new key or map ID only takes effect after a reload.
             setModalInfo({
@@ -178,15 +223,28 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                 <h2 className="text-lg font-bold text-orange-400 mb-2">Important Notice</h2>
                 <p className="text-sm text-gray-300 mb-2">
                     The <span className="font-semibold text-orange-400">WhereQ Map Application</span> is built on
-                    <span className="font-bold text-blue-400"> Google Maps</span> technology. To use this application,
-                    a valid <span className="font-semibold text-yellow-400">Google Maps API Key</span> and
-                    <span className="font-semibold text-yellow-400"> Map ID</span> are required.
+                    <span className="font-bold text-blue-400"> Google Maps</span> technology.
+                    {isUsingSharedKey ? (
+                        <>
+                            It is already running on the shared
+                            <span className="font-semibold text-yellow-400"> WhereQ Maps key</span>, so the map works
+                            straight away - there is nothing you have to do.
+                        </>
+                    ) : (
+                        <>
+                            To use this application, a valid
+                            <span className="font-semibold text-yellow-400"> Google Maps API Key</span> and
+                            <span className="font-semibold text-yellow-400"> Map ID</span> are required.
+                        </>
+                    )}
                 </p>
                 <p className="text-sm text-gray-300 mb-2">
-                    Please enter your own <span className="font-semibold text-yellow-400">API Key</span> and
-                    <span className="font-semibold text-yellow-400">Map ID</span> in the settings section below.
-                    All data is securely stored in your browser's
-                    <span className="font-semibold text-blue-400"> local storage</span>.
+                    You can keep using the shared key, or enter your own
+                    <span className="font-semibold text-yellow-400"> API Key</span> and
+                    <span className="font-semibold text-yellow-400"> Map ID</span> in the settings section below to use
+                    them instead. Your own values are stored only in your browser's
+                    <span className="font-semibold text-blue-400"> local storage</span>, and they take precedence over
+                    the shared key.
                     <span className="font-semibold text-orange-400">WhereQ</span> does not access, store, or share any
                     <span className="font-bold text-red-400"> personal information</span> or data from your device under any circumstances.
                 </p>
