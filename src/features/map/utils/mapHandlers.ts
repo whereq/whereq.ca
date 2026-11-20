@@ -298,8 +298,9 @@ export const updateMarkerIcon = (
       marker.content = createResizableMarkerWithImgUrl(icon);
       break;
     case MarkerIconType.Default:
-      // No changes to the marker, use the default icon
-      marker.content = makeDefaultMarkderContent().element;
+      // The PinElement itself is the content: `PinElement.element` is deprecated
+      // by Google ("Please use the PinElement directly").
+      marker.content = makeDefaultMarkderContent();
       break;
     default:
       throw new Error("Invalid marker icon type");
@@ -319,8 +320,12 @@ export const handleMarkerComplete = (
 ): MapOverlay => {
   let isHighlighted = false;
 
-  // Add click event listener
-  marker.addListener(MAP_EVENT.CLICK, () => {
+  // Add click event listener.
+  // The marker itself is the event target and the event is `gmp-click`;
+  // `addListener("click")` on an advanced marker is the deprecated form.
+  // `gmpClickable` has to be on for the event to fire at all.
+  marker.gmpClickable = true;
+  marker.addEventListener("gmp-click", () => {
     isHighlighted = !isHighlighted;
     highlightMarker(marker, isHighlighted);
     onClick(marker, isHighlighted); // Call the onClick callback

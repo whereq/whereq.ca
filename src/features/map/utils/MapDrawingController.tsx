@@ -185,7 +185,12 @@ const MapDrawingController: React.FC = () => {
       const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
         map: map ?? null,
         position,
-        content: makeDefaultMarkderContent().element,
+        // The PinElement itself is the content: `PinElement.element` is
+        // deprecated by Google ("Please use the PinElement directly").
+        content: makeDefaultMarkderContent(),
+        // Makes the marker clickable and keyboard reachable; the click
+        // arrives as the `gmp-click` event.
+        gmpClickable: true,
       });
 
       const overlay = handleMarkerComplete(advancedMarker, () => {

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useMapStore, useOverlayStore, usePlaceStore } from "@/features/map/store/mapStore";
 import { loadMapObjectFromLocalStorage } from "@/features/map/utils/mapUtils";
 import { Map, MapOverlay } from "@/features/map/types/types";
-import { MAP_CENTER, MAP_EVENT } from "@/features/map/utils/constants";
+import { MAP_CENTER } from "@/features/map/utils/constants";
 import { updateMarkerIcon } from "@/features/map/utils/mapHandlers";
 import { MarkerIconType } from "@/features/map/models/MapEnum";
 
@@ -87,44 +87,48 @@ export const useHandleAdvancedMarker = (
 
     // Sync the ref with the state
     useEffect(() => {
-        let markerElement: HTMLElement | null = null;
+        let marker: google.maps.marker.AdvancedMarkerElement | null = null;
         let handleClick: (() => void) | null = null;
 
         if (placeMapOverlay && mapRef.current && window.google.maps.marker) {
-            const latLng: google.maps.LatLngLiteral = 
-                placeMapOverlay.coordinates ? 
-                    placeMapOverlay.coordinates[0] : 
+            const latLng: google.maps.LatLngLiteral =
+                placeMapOverlay.coordinates ?
+                    placeMapOverlay.coordinates[0] :
                     { lat: MAP_CENTER.lat, lng: MAP_CENTER.lng };
 
-            // Create a new marker if it doesn't exist 
+            // Create a new marker if it doesn't exist
             if (!advancedMarkerRef.current) {
                 advancedMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
                     map: mapRef.current,
                     position: new google.maps.LatLng(latLng.lat, latLng.lng),
+                    // Makes the marker clickable and keyboard reachable; the
+                    // click arrives as the `gmp-click` event.
+                    gmpClickable: true,
                 });
             } else {
-                advancedMarkerRef.current.position = 
+                advancedMarkerRef.current.position =
                     new google.maps.LatLng(latLng.lat, latLng.lng);
             }
 
-            markerElement = advancedMarkerRef.current.element;
-            if (markerElement) {
-                handleClick = () => {
-                    if (advancedMarkerRef.current && !isDirtyMarkerRef.current) {
-                        const mapMarker = {
-                            id: placeMapOverlay.id || uuidv4(),
-                            advancedMarker: advancedMarkerRef.current,
-                            icon: placeMapOverlay.icon || { type: MarkerIconType.Default, content: "" },
-                            // mapOverlay: placeMapOverlay,
-                        };
-                        setSelectedMarker(mapMarker); // Store the marker reference
-                    }
-                    showMarkerCustomizeModal(true);
-                };
-                // Remove any existing click event listener to avoid duplicates
-                markerElement.removeEventListener(MAP_EVENT.CLICK, handleClick);
-                markerElement.addEventListener(MAP_EVENT.CLICK, handleClick);
-            }
+            marker = advancedMarkerRef.current;
+
+            // `addEventListener("click", ...)` on the marker's DOM element is
+            // deprecated by Google ("Please use addEventListener('gmp-click',
+            // ...)"), and so is `AdvancedMarkerElement.element`. The marker
+            // itself is the event target.
+            handleClick = () => {
+                if (advancedMarkerRef.current && !isDirtyMarkerRef.current) {
+                    const mapMarker = {
+                        id: placeMapOverlay.id || uuidv4(),
+                        advancedMarker: advancedMarkerRef.current,
+                        icon: placeMapOverlay.icon || { type: MarkerIconType.Default, content: "" },
+                        // mapOverlay: placeMapOverlay,
+                    };
+                    setSelectedMarker(mapMarker); // Store the marker reference
+                }
+                showMarkerCustomizeModal(true);
+            };
+            marker.addEventListener("gmp-click", handleClick);
 
             // Update the marker icon no matter newly created or existing marker
             if (placeMapOverlay.icon) {
@@ -134,11 +138,11 @@ export const useHandleAdvancedMarker = (
 
         // Cleanup function to remove the event listener
         return () => {
-            if (markerElement && handleClick) {
-                markerElement.removeEventListener(MAP_EVENT.CLICK, handleClick);
+            if (marker && handleClick) {
+                marker.removeEventListener("gmp-click", handleClick);
             }
         };
-    }, [placeMapOverlay, 
+    }, [placeMapOverlay,
         mapRef, 
         showMarkerCustomizeModal, 
         setSelectedMarker]);

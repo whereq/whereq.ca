@@ -25,10 +25,12 @@ export const highlightShape = (shape: google.maps.Polygon |
 export const highlightMarker = (marker: google.maps.marker.AdvancedMarkerElement, isHighlighted: boolean) => {
   if (isHighlighted) {
     // Create a highlighted PinElement
-    marker.content = makeHighlightedMarkerContent().element; // Update the marker's content
+    // The PinElement itself is the content: `PinElement.element` is deprecated
+    // by Google ("Please use the PinElement directly").
+    marker.content = makeHighlightedMarkerContent(); // Update the marker's content
   } else {
     // Create a default PinElement
-    marker.content = makeDefaultMarkderContent().element; // Update the marker's content
+    marker.content = makeDefaultMarkderContent(); // Update the marker's content
   }
 };
 
