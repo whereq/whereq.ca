@@ -62,7 +62,9 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
     inputId = "mapSearch",
     placeholder = "Search addresses & places",
     inputClassName = "",
-    boxClassName = "w-72",
+    // The field fills the panel it sits in — the tool bar below it sets the
+    // width, and a field narrower than that leaves a dead gap on the right.
+    boxClassName = "w-full",
     className = "",
 }) => {
     const {
@@ -152,7 +154,7 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
     const isOpen = suggestions.length > 0;
 
     return (
-        <div ref={wrapperRef} className={`relative ${className}`}>
+        <div ref={wrapperRef} className={`relative w-full ${className}`}>
             {/* The field: magnifier, input, clear. One bordered control, the
                 way whereq.com's sidebar search reads. */}
             <div
