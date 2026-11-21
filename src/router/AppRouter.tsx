@@ -19,6 +19,7 @@ import PhysicsPage from "@/features/physics/pages/PhysicsPage";
 import ChemistryPage from "@/features/chemistry/pages/ChemistryPage";
 import PawsPage from "@/features/paws/pages/PawsPage";
 import MultimediaPage from "@/features/multimedia/pages/MultimediaPage";
+import ReactPage from "@/features/react/pages/ReactPage";
 import EventBoard from "@/pages/event-board/EventBoard";
 import Profile from "@/pages/profile/Profile";
 
@@ -59,6 +60,7 @@ export const AppRouter = () => {
           <Route path="/chemistry" element={<ChemistryPage />} />
           <Route path="/paws" element={<PawsPage />} />
           <Route path="/multimedia" element={<MultimediaPage />} />
+          <Route path="/react" element={<ReactPage />} />
         </Route>
       </Routes>
     </>

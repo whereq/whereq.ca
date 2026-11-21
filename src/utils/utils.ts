@@ -68,4 +68,5 @@ export const routeTitles: Record<string, string> = {
   "/chemistry": "Chemistry",
   "/academy": "Academy",
   "/paws": "Paws",
+  "/react": "WhereQ React",
 };
