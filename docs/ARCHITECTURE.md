@@ -1372,23 +1372,64 @@ predictions as plain data.
 - the `PlacePrediction.toPlace()` → `Place.fetchFields()` resolve that
   turns a prediction into coordinates, address and display name.
 
-`components/MapSearchBox.tsx` renders the list — MetroUI dark, with
-`role="listbox"` / `role="option"`, arrow keys, Enter and Escape — and is
-the only map implementation left in the repo.
+**The box itself is the shared `@whereq/react` `SearchBox`.**
+`components/MapSearchBox.tsx` is now a thin wrapper: the field, the
+magnifier, the clear (×), the dropdown, the keyboard navigation, the ARIA
+wiring (`combobox` / `listbox` / `option`, `aria-activedescendant`) and the
+click-outside behaviour all live in the library, and this file only supplies
+the map-specific glue — the predictions and what happens with the result.
+
+That is the point: the control is written **once**, in
+[whereq-react](https://github.com/whereq/whereq-react), and every app in the
+whereq universe renders the same box instead of keeping its own copy. The
+library's `SearchBox` is themeable through the `--wq-search-*` CSS custom
+properties; `MapSearchBox.tsx` passes the MetroUI values as a `theme` prop so
+the panel looks exactly as it did before the move.
+
+Consequences for this file:
+
+- the library owns the highlight, so `useMapSearch` no longer keeps a
+  `highlightedIndex` — it only fetches, resolves and reports;
+- the magnifier is the **submit** control: a query with suggestions picks the
+  highlighted one, a query without one is geocoded — so there is no separate
+  "Search" button beside the field;
+- two details that are easy to get wrong, both now handled by the library:
+  the placeholder and the typed text are *not* orange (the accent is for
+  selection, not for every glyph in the box), and the input carries
+  `text-left` explicitly — the shell centres everything (`ShellLayout` puts
+  `text-align: center` on the page container) and an input inherits it, so
+  the text would sit in the middle of the field.
 
 **The field follows whereq.com's sidebar search.** One bordered control:
 a magnifier on the left, the input in the middle, a clear (×) on the
-right, and the suggestion list as a single dropdown attached to the field.
-The magnifier is the **submit** control — a query with suggestions picks
-the highlighted one, a query without one is geocoded — so there is no
-separate "Search" button beside the field. Two details that are easy to
-get wrong:
+right, and the suggestion list as a single dropdown attached to the field —
+the shape the library's `SearchBox` ships, and whereq.ca passes the
+MetroUI colours to it.
 
-- the placeholder and the typed text are *not* orange. The accent is for
-  selection, not for every glyph in the box;
-- the input carries `text-left` explicitly. The shell centres everything
-  (`ShellLayout` puts `text-align: center` on the page container), and an
-  input inherits it — the text would sit in the middle of the field.
+**The field fills the panel it sits in.** The library's search box is
+`width: 100%` and the tool panel's row uses `items-stretch`, so the field's
+right edge lands exactly on the tool bar's right edge. An earlier version
+pinned the field to `w-72`, which left a visible blank gap on the right of
+the panel and made the box look unrelated to the buttons under it. The
+suggestion list is anchored to the field (`left-0 right-0`), so it inherits
+the full width automatically — there is no separate width to keep in sync.
+
+**The box is ours, but the API behind it is metered.**
+`useMapSearch` swallows a failed prediction call (`catch` → empty list), so
+a *quota* problem looks exactly like a broken search box: the field works,
+the dropdown opens, and it is empty. Google rejects a request that exceeds
+the project's daily quota with a 4xx, and the hook never surfaces it.
+
+The `whereq-ca` project therefore carries daily caps on the Maps buckets
+(Places autocomplete, Place Details, Geocoding and the billable map loads).
+They exist to stop a runaway from spending money, not to ration normal use —
+a cap that a normal day can reach is a bug. Check the quota before
+debugging the search path:
+
+```bash
+gcloud alpha services quota list --service=places-backend.googleapis.com \
+  --consumer=projects/whereq-ca
+```
 
 **Advanced markers follow Google's current element API.** Two rules, both
 enforced by the console on a vector map (and invisible on the raster

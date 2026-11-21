@@ -58,7 +58,6 @@ export const useMapSearch = (debounceMs: number = DEFAULT_DEBOUNCE_MS) => {
     const [query, setQuery] = useState("");
     const [suggestions, setSuggestions] = useState<MapSuggestion[]>([]);
     const [loading, setLoading] = useState(false);
-    const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
     /** One autocomplete session per search, so the whole session is billed once. */
     const sessionRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
@@ -98,7 +97,6 @@ export const useMapSearch = (debounceMs: number = DEFAULT_DEBOUNCE_MS) => {
             if (!placesLib?.AutocompleteSuggestion) {
                 if (requestId === requestIdRef.current) {
                     setSuggestions([]);
-                    setHighlightedIndex(-1);
                     setLoading(false);
                 }
                 return;
@@ -132,14 +130,12 @@ export const useMapSearch = (debounceMs: number = DEFAULT_DEBOUNCE_MS) => {
                     }));
 
                 setSuggestions(list);
-                setHighlightedIndex(list.length > 0 ? 0 : -1);
             } catch {
                 if (requestId !== requestIdRef.current) {
                     return;
                 }
                 // A failed prediction call must not break the search box.
                 setSuggestions([]);
-                setHighlightedIndex(-1);
             } finally {
                 if (requestId === requestIdRef.current) {
                     setLoading(false);
@@ -170,7 +166,6 @@ export const useMapSearch = (debounceMs: number = DEFAULT_DEBOUNCE_MS) => {
         // An empty box closes the session and the list.
         sessionRef.current = null;
         setSuggestions([]);
-        setHighlightedIndex(-1);
         setLoading(false);
     }, []);
 
@@ -204,7 +199,6 @@ export const useMapSearch = (debounceMs: number = DEFAULT_DEBOUNCE_MS) => {
             // Picking a place ends the session; the next keystroke opens a new one.
             sessionRef.current = null;
             setSuggestions([]);
-            setHighlightedIndex(-1);
             setLoading(false);
 
             return resolved;
@@ -219,39 +213,12 @@ export const useMapSearch = (debounceMs: number = DEFAULT_DEBOUNCE_MS) => {
         setQuery(place.address || place.title);
     }, []);
 
-    /** Close the suggestion list (Escape, or a click somewhere else). */
-    const clearSuggestions = useCallback(() => {
-        setSuggestions([]);
-        setHighlightedIndex(-1);
-    }, []);
-
-    /** Move the keyboard highlight, wrapping around at both ends. */
-    const moveHighlight = useCallback((delta: number) => {
-        setHighlightedIndex((current) => {
-            if (suggestions.length === 0) {
-                return -1;
-            }
-            const next = current + delta;
-            if (next < 0) {
-                return suggestions.length - 1;
-            }
-            if (next >= suggestions.length) {
-                return 0;
-            }
-            return next;
-        });
-    }, [suggestions.length]);
-
     return {
         query,
         setQuery: updateQuery,
         suggestions,
         loading,
-        highlightedIndex,
-        setHighlightedIndex,
         selectSuggestion,
         applyResolvedPlace,
-        clearSuggestions,
-        moveHighlight,
     };
 };
