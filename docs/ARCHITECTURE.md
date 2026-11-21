@@ -1319,6 +1319,39 @@ with `z-20`, and the settings panel sits above both at `z-40`. Inside
 map's own layers reach `z-index: 1000002` on a vector map — so the
 suggestion list could not reliably paint over the map surface.
 
+**A vector map can come up blank, and the app must say so.**
+A vector map is not one request but a pipeline: the loader script, then
+`mapConfigs:batchGet`, then the vector renderer (`webgl.js` + `onion.js`),
+then the map style (`CompactLegendSdk-…`), then the tiles. If the browser
+drops one of those, the page shows an empty grey box that is
+indistinguishable from a broken app — Google logs nothing, the map DOM is
+half-built, and there is no error to catch.
+
+Measured on the production site (real Chrome over CDP): the failure is
+**not** caused by the API key or the map ID (the known-good credentials
+fail the same way), and the `mapConfigs` response body is byte-identical
+between a painted and a blank run (12 125 bytes, same style URL, same tile
+host). The difference is downstream of it: in a blank run the renderer and
+style requests are never made, so no canvas is created (`canvas: 0` vs
+`1`, `gm-style` 3 vs 8). Chrome throttles `requestAnimationFrame` hard in
+a backgrounded page (measured: 1 frame in 3 s while hidden, 21–23 frames
+when visible), and the vector renderer drives itself from `rAF`.
+
+So the app now reports its own state instead of showing a silent grey box.
+`Maps.tsx` listens for the map's `onTilesLoaded` event, which is the first
+hard proof that a tile was drawn:
+
+- nothing drawn yet and under 8 s → no notice (the normal case),
+- nothing drawn yet and over 8 s → "Loading the map…",
+- nothing drawn yet and over 20 s → "The map didn't load." + a
+  **Try again** button that reloads the page, because a fresh page load
+  is the only thing that re-issues the dropped request.
+
+A healthy map never shows either notice, because `onTilesLoaded` fires
+within a second or two. Note that `onTilesLoaded` is a *tile* event: it
+does not fire for a map that never got as far as tiles, which is exactly
+the case the notice is for.
+
 **Search is our own suggestion list, not Google's widget.**
 `google.maps.places.Autocomplete` was closed to new customers on
 March 1, 2025. Google still loads the class and still answers its
