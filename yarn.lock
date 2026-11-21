@@ -1138,10 +1138,10 @@
   dependencies:
     "@rolldown/pluginutils" "^1.0.1"
 
-"@whereq/react@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@whereq/react/-/react-0.8.0.tgz#e6ec268a2cbc0d7b65e126852c6e66a6b00477ba"
-  integrity sha512-KOD+1ePtfkmjFvKoGjtii/Ml4xZSc/3AOruGdMMcrCTAZ+Shd2wxk4wdI1Vl0gOj/Rx3dWXQOAyfAx8mT8hbzA==
+"@whereq/react@^0.9.4":
+  version "0.9.4"
+  resolved "https://registry.yarnpkg.com/@whereq/react/-/react-0.9.4.tgz#b95196f7612c890c23b44a447008d15ecc989e1f"
+  integrity sha512-hZXnDR+RDWTVGGvqu7Lrw72jwqpjVTugnYDjwlxG4mkyAr4kxv5oP/D2Py5T6aXbNSlf45g6/TYw4jw8e70nJw==
 
 "@xmldom/xmldom@0.9.9":
   version "0.9.9"

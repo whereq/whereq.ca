@@ -16,6 +16,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { GiMaterialsScience, GiAcid  } from "react-icons/gi";
+import { FaReact } from "react-icons/fa";
 import React from "react";
 
 import { useAppStore } from "@/store/store";
@@ -64,6 +65,7 @@ export const AppLauncher = () => {
     { name: "Chemistry", icon: GiAcid, path: "/chemistry" },
     { name: "Academy", icon: faGraduationCap, path: "/academy" },
     { name: "Paws", icon: faPaw, path: "/paws" },
+    { name: "React", icon: FaReact, path: "/react" },
   ];
 
   return (

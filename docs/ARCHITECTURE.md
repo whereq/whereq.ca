@@ -28,7 +28,7 @@ it is, with enough specifics to be actionable.
 10. [Inter-component messaging — pub/sub](#10-inter-component-messaging--pubsub)
 11. [Analytics — GA4](#11-analytics--ga4)
 12. [The Multimedia feature group (deep dive)](#12-the-multimedia-feature-group-deep-dive)
-13. [The other 13 features (one-paragraph maps)](#13-the-other-13-features-one-paragraph-maps)
+13. [The other features (one-paragraph maps)](#13-the-other-features-one-paragraph-maps)
 14. [Configuration — Vite, Vercel, env, TypeScript, ESLint](#14-configuration--vite-vercel-env-typescript-eslint)
 15. [Cross-cutting libraries](#15-cross-cutting-libraries)
 16. [Deployment, headers, and the COOP/COEP contract](#16-deployment-headers-and-the-coopcoep-contract)
@@ -286,6 +286,7 @@ Concrete routes:
 | `/chemistry` | `features/chemistry/pages/ChemistryPage` | |
 | `/paws` | `features/paws/pages/PawsPage` | |
 | `/multimedia` | `features/multimedia/pages/MultimediaPage` | |
+| `/react` | `features/react/pages/ReactPage` | (@whereq/react demo) |
 
 Above the `<Routes>`, a `<RouteChangeTracker />` (from
 `components/analytics/`) fires a GA4 `page_view` event on every location
@@ -443,12 +444,54 @@ the same file under the MetroUI section.
 
 ### Component primitive: `<AppCard>`
 
-`src/components/app-card/` is the MetroUI card primitive. It accepts a title,
-description, icon/logo, href, and disabled/comingSoon flags. Used as the
-building block of the `Home` page's feature grid and the `About` page's
-project list. The `icon` slot accepts either a React node (for
-`react-icons`) or a `logo` string (for raster image URLs); the card
-auto-detects which to render.
+`src/components/app-card/` is the Lab's experiment tile. It takes a `name`,
+a `description`, an `icon` (a FontAwesome definition **or** a `react-icons`
+component — the card renders whichever it is given), a `path` and an optional
+`category` that is rendered with the library's `<Tag>`. Its own stylesheet
+(`app-card.css`) draws the framed icon tile, the name, the description and the
+category tag, and animates the card up on hover. The Lab grid is its only
+consumer.
+
+### The Universe language inside the shell
+
+The app carries **two palettes**, and mixing them is the fastest way to make
+a page look wrong:
+
+- **MetroUI** (`--color-metro-*` in `src/index.css`) — orange `#f5a623` on
+  `#161b27`, cream `#f0e6c8` text, orange-tinted borders. This is the style
+  of the older feature pages (`paws`, `tools`, `api-explorer`), which still
+  use `text-orange-300` and `bg-gray-800` directly.
+- **Universe** (`--uq-*` in `src/index.css`) — the deep-space palette of the
+  marketing page at `/`: cool blue accent `#4da8f0`, ink `#e9eff6`, lines
+  `rgba(168, 190, 216, 0.12)`. The Universe page keeps its own page-local
+  copy of these tokens (it renders full-bleed, outside the shell), so the
+  shared subset lives on `:root` for the in-shell surfaces that want it.
+
+The **Lab hub** (`pages/home/Home.tsx`) and the **`@whereq/react` demo**
+(`features/react/`) are the two in-shell surfaces built on the Universe
+language. The Lab masthead is a two-column editorial block — a mono kicker
+over a hairline rule, a tight title, a constrained lede and a call to action
+on the left, a fact rail on the right — followed by a toolbar (the shared
+`SearchBox` + category chips) and the experiment grid. `pages/home/lab.css`
+and `features/react/react.css` hold those styles, both scoped under
+`.wq-lab` / `.wq-react`.
+
+**The shell centres everything.** `ShellLayout` puts `text-align: center` on
+the page container and it is inherited by every route, so a panel, a table or
+a paragraph reads centred unless it says otherwise. Both new surfaces state
+`text-align: left` explicitly.
+
+### The library's Tailwind classes need a `@source`
+
+`@whereq/react` ships a few components (`Tag`, `Toast`) whose markup is
+written with Tailwind utility classes. Those class names live in the
+*published bundle*, which Tailwind never scans on its own — without the
+`@source "../../node_modules/@whereq/react/dist/**/*.{js,mjs,cjs}"` line in
+`src/index.css` the library renders **unstyled** in this app. The library's
+`Tag` and `Toast` also read their colours from app-supplied variables
+(`--rule`, `--text`, `--text-dim`, `--text-faint`, `--bg-soft`, `--accent`,
+`--up`, `--down`, `--nova`), which `src/index.css` defines on `:root` in the
+Universe flavour.
 
 ### Tailwind v3 config + Tailwind v4 plugin — coexistence
 
@@ -1079,7 +1122,7 @@ uploaded images into a PDF, entirely in the browser, using `pdf-lib`
 
 ---
 
-## 13. The other 13 features (one-paragraph maps)
+## 13. The other features (one-paragraph maps)
 
 ### `academy/` — stub
 
@@ -1535,6 +1578,26 @@ doesn't confuse MathJax.
 
 Other sections (`MECHANICS`, `ELECTRICS`, `MAGNETICS`, `THERMODYNAMICS`,
 `OPTICS`, etc. — 14 in the enum) are placeholders.
+
+### `react/` — the @whereq/react demo
+
+The `@whereq/react` demo at `/react`. It follows the standard feature shape
+(`pages/` + `components/{sidebar,workspace}` + `store/` + `models/`), and the
+six primitives of the library are its **child pages**: `SearchBox`, `Tag`,
+`Toast`, `Avatar`, `Scrollbar` and `CountryFlag`.
+
+The rail on the left holds one button per primitive, the resizable workspace
+shows the live demo of the selected one (plus its code snippet), and the panel
+on the right documents the library and the selected primitive. The workspace
+starts **open** — the point of the page is the live component.
+
+Two details worth knowing:
+
+- The page mounts the library's `<ToastProvider>` and `<ToastViewport>`, so
+  the imperative `toast.*` API has a provider to talk to (the library's
+  `toast` handle throws when no provider has ever mounted).
+- The demo renders the **published package**, not local source. A fix in the
+  library only shows up here after a new npm release.
 
 ### `tag/`
 

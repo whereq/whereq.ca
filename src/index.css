@@ -17,6 +17,13 @@
 /* Markdown is excluded explicitly: `@source` only adds to Tailwind's
    automatic detection, it does not replace it. */
 @source not "../**/*.md";
+/* `@whereq/react` ships a few components (Tag, Toast) whose markup is
+   written with Tailwind utility classes. Those class names live in the
+   published bundle, which Tailwind never scans on its own — so without
+   this line the library renders *unstyled* in this app. Pointing `@source`
+   at the built bundle makes Tailwind compile the utilities the library
+   actually uses. */
+@source "../../node_modules/@whereq/react/dist/**/*.{js,mjs,cjs}";
 
 /* ─────────────────────────────────────────────────────────────
    Body / html backgrounds
@@ -109,6 +116,57 @@ body {
   --color-gray-800: #1f2937;
   --color-gray-900: #161b27;
   --color-gray-950: #0a0d14;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   WhereQ Universe tokens
+   ------------------------------------------------------------
+   The Universe landing page (features/universe/universe.css) keeps
+   its own page-local copy of these values because it renders
+   full-bleed, outside the app shell. The in-shell surfaces — the
+   Lab hub and the @whereq/react demo — need the same palette but
+   cannot reach into a page-scoped stylesheet, so the shared subset
+   lives here on `:root`.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --uq-bg-0: #05080e;
+  --uq-bg-1: #0a0e13;
+  --uq-bg-2: #0e141c;
+  --uq-bg-3: #121a24;
+  --uq-shell: #161b27;
+  --uq-surface: #1c2233;
+  --uq-surface-hover: #232b3d;
+  --uq-line: rgba(168, 190, 216, 0.12);
+  --uq-line-strong: rgba(168, 190, 216, 0.22);
+  --uq-ink: #e9eff6;
+  --uq-ink-soft: #aab7c9;
+  --uq-ink-dim: #6e7c90;
+  --uq-accent: #4da8f0;
+  --uq-accent-soft: rgba(77, 168, 240, 0.08);
+  --uq-accent-line: rgba(77, 168, 240, 0.45);
+  --uq-r-ctl: 4px;
+  --uq-r-card: 8px;
+  --uq-r-tile: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   @whereq/react theme tokens
+   ------------------------------------------------------------
+   The library's Tag and Toast paint themselves with these
+   consumer-supplied variables (its own components never hardcode
+   a colour). The Lab supplies the WhereQ universe flavour so the
+   shared components sit natively inside the app.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --rule: rgba(168, 190, 216, 0.14);
+  --text: #e9eff6;
+  --text-dim: #aab7c9;
+  --text-faint: #6e7c90;
+  --bg-soft: #121a24;
+  --accent: #4da8f0;
+  --up: #3fd68f;
+  --down: #f47b6b;
+  --nova: #f4b33d;
 }
 
 /* ─────────────────────────────────────────────────────────────

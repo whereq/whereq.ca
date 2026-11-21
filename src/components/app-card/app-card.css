@@ -1,0 +1,84 @@
+/* ============================================================
+   AppCard — the Lab's experiment tile
+   ------------------------------------------------------------
+   One card per Lab experiment. The layout follows the Universe
+   page's origin cells: a small framed icon tile, the name, a
+   one-line description and a category tag pinned to the bottom.
+
+   Colours come from the shared `--uq-*` tokens (src/index.css).
+   ============================================================ */
+
+.app-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--uq-line);
+  border-radius: var(--uq-r-card);
+  background: var(--uq-surface);
+  color: var(--uq-ink);
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.app-card:hover {
+  border-color: var(--uq-accent-line);
+  background: var(--uq-surface-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.app-card:focus-visible {
+  outline: 2px solid var(--uq-accent);
+  outline-offset: 2px;
+}
+
+.app-card__tile {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--uq-line);
+  border-radius: var(--uq-r-tile);
+  background: var(--uq-accent-soft);
+  color: var(--uq-accent);
+}
+
+.app-card__icon {
+  width: 18px;
+  height: 18px;
+}
+
+.app-card__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--uq-ink);
+}
+
+.app-card__desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--uq-ink-dim);
+}
+
+.app-card__foot {
+  margin-top: auto;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The category is the library's own <Tag>; only the colour scheme
+   is re-mapped here so the chip reads like the rest of the Lab. */
+.app-card__foot .app-card__tag {
+  color: var(--uq-ink-dim);
+  border-color: var(--uq-line);
+  background: transparent;
+}

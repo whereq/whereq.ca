@@ -35,6 +35,7 @@ There is **no test runner**. `@testing-library/*` is in `devDependencies` but no
 - `src/store/store.ts` — three global Zustand stores: `useAppStore` (drawer), `useNavigationStore` (breadcrumb), `useModalStore` (CustomModal state). Every feature also has its own per-feature Zustand store.
 - `src/lib/analytics.ts` — GA4 wrapper. No-op if `VITE_GA4_MEASUREMENT_ID` is unset.
 - `src/features/<name>/` — one folder per feature route. Standard shape: `pages/<Name>Page.tsx` + `components/{Sidebar,Workspace,<Name>,sidebar/settings-panel,workspace/<Section>Section}` + `store/<name>Store.ts` + `models/<Name>Enum.ts` + `resources/` (bundled YAML/JSON). The deep playbook for adding a feature lives in `docs/ARCHITECTURE.md` §18.
+- `src/features/react/` — the `@whereq/react` demo at `/react`. One child page per library primitive (SearchBox, Tag, Toast, Avatar, Scrollbar, CountryFlag) in the sidebar rail + the resizable workspace. It renders the **published package**, so a library fix only shows up here after a new npm release.
 - `docs/ARCHITECTURE.md` — canonical, ~89 KB deep-read of every file. **Read this before non-trivial changes**; it captures the design rationale, dead code, and known bugs that aren't visible from the code alone.
 
 ## State / persistence conventions
@@ -47,9 +48,14 @@ There is **no test runner**. `@testing-library/*` is in `devDependencies` but no
 
 ## Styling / design system
 
-**MetroUI dark** palette (mirrored from `whereq.github.io`): bg `#161b27`, accent orange `#f5a623`, text `#f0e6c8`, Fira Code monospace globally. Tokens defined as Tailwind v4 CSS variables in the `@theme {}` block in `src/index.css` (which also overrides the gray scale so `bg-gray-900` doesn't produce a visible seam against the body). `tailwind.config.js` (v3-style) is mostly dormant but kept around for tooling compatibility.
+**Two palettes live in this app** — do not mix them on one surface:
 
-Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon vs logo slot.
+- **MetroUI dark** (mirrored from `whereq.github.io`): bg `#161b27`, accent orange `#f5a623`, text `#f0e6c8`, Fira Code monospace globally. Tokens are Tailwind v4 CSS variables in the `@theme {}` block in `src/index.css` (which also overrides the gray scale so `bg-gray-900` doesn't produce a visible seam against the body). `tailwind.config.js` (v3-style) is mostly dormant but kept around for tooling compatibility. The older feature pages (`paws`, `tools`, `api-explorer`) still use this look with raw `text-orange-300` / `bg-gray-800`.
+- **Universe deep-space** (the marketing page at `/`): accent `#4da8f0`, ink `#e9eff6`, soft `#aab7c9`, dim `#6e7c90`, lines `rgba(168,190,216,0.12)`. The Universe page keeps its own page-local copy of these tokens (it renders full-bleed, outside the shell); the shared subset is on `:root` as `--uq-*` in `src/index.css` for the in-shell surfaces that use it — the **Lab hub** (`pages/home/`, scoped `.wq-lab`) and the **@whereq/react demo** (`features/react/`, scoped `.wq-react`).
+
+Card primitive is `<AppCard>` in `src/components/app-card/` — the Lab's experiment tile (framed icon tile, name, description, category tag). It takes a FontAwesome definition *or* a `react-icons` component and renders whichever it is given.
+
+**`@whereq/react` needs a Tailwind `@source`.** Its `Tag` and `Toast` are written with Tailwind utility classes that live in the published bundle, which Tailwind never scans on its own — `src/index.css` points `@source` at `node_modules/@whereq/react/dist/**` so those utilities compile. Remove that line and the library renders **unstyled**. The library's `Tag` / `Toast` also read their colours from app-supplied variables (`--rule`, `--text`, `--text-dim`, `--text-faint`, `--bg-soft`, `--accent`, `--up`, `--down`, `--nova`), defined on `:root` in `src/index.css`.
 
 ## Heavy local-feature engines
 
@@ -69,7 +75,8 @@ Card primitive is `<AppCard>` in `src/components/app-card/`. Auto-detects icon v
 - **The standard 3.125rem bar height** in `ShellLayout` is duplicated as a magic number in 3 places (Header height, Footer height, main `height: calc(100vh - 6.25rem)`). Changing bar height requires editing all three.
 - **Tailwind v3 config + Tailwind v4 plugin coexist**. The `@theme` block in `src/index.css` is the runtime source of truth; `tailwind.config.js` is mostly dormant.
 - **Tailwind arbitrary values use underscores for spaces, never commas.** `grid-cols-[5%_20%_35%_40%]` is correct; `grid-cols-[5%,20%,35%,40%]` compiles to `grid-template-columns:5%,20%,35%,40%`, which is **invalid CSS** — a grid track list is space-separated. The browser keeps the selector and silently drops the declaration, so the element falls back to a single column and a "table" collapses into one stacked column. The failure is invisible in the source and in DevTools unless you look at the CSSOM: the rule reads `.grid-cols-\[5\%\,20\%…\] { }` with an empty body. The map and api-explorer settings panels both had this; the map one is now a real `<table>`.
-- **The app shell centers everything.** `ShellLayout` puts `text-align: center` on the page container, and it inherits into every route — so any panel, table or paragraph must set `text-left` explicitly or its content renders centered.
+- **The app shell centers everything.** `ShellLayout` puts `text-align: center` on the page container, and it inherits into every route — so any panel, table or paragraph must set `text-left` explicitly or its content renders centered. The Lab hub (`.wq-lab`) and the library demo (`.wq-react`) both set `text-align: left` on their root for exactly this reason.
+- **The library's `SearchBox` shows its list whenever `suggestions` is non-empty** — an empty query does not close it. Filter the suggestions yourself (pass `[]` until the query has characters) or the dropdown sits open.
 - **`react-ace@15` quirk**: published CJS; Vite's CJS→ESM transform makes `import X from "react-ace"` return the whole `module.exports` object. The component is `mod.default.default`. See `CodeFormatter.tsx` for the unwrap.
 - **`as any` casts** in `AudioVideoMerger.handleMerge` carry inline `// eslint-disable-next-line` comments — required because @ffmpeg/ffmpeg v0.12's types are wrong.
 - **`ffmpeg.readFile` returns `Uint8Array | string`** — narrow the `string` case before building a `Blob` (see `AudioVideoMerger`, `VideoSplitter`, `GifMaker`).
