@@ -127,7 +127,6 @@ const MapInner: React.FC<{
                 <FontAwesomeIcon icon={mapType === "roadmap" ? faTreeCity : faMap} />
             </button>
 
-            <MapTools />
             <MapDrawingController />
         </>
     );
@@ -149,21 +148,43 @@ const Maps: React.FC = () => {
     return (
         <>
             <div className="relative h-full w-full">
+                {/*
+                    The camera is set with `defaultCenter` / `defaultZoom`,
+                    NOT with `center` / `zoom`.
+
+                    `center` and `zoom` are *controlled* props: the library
+                    re-applies them on every render of the <Map> component and
+                    snaps the camera back whenever the live map differs from
+                    the props (see `use-map-camera-params.ts`). That silently
+                    undid every programmatic camera move the app makes - the
+                    search result's `panTo` + `setZoom(15)`, and the overlay
+                    code's `fitBounds` - so a search resolved the address but
+                    the map never moved and no marker was shown.
+                */}
                 <Map
                     mapId={googleMapId || undefined}
-                    center={MAP_CENTER}
-                    zoom={12}
+                    defaultCenter={MAP_CENTER}
+                    defaultZoom={12}
                     mapTypeId={mapType}
                     disableDefaultUI={true}
                     clickableIcons={false}
                     disableDoubleClickZoom={true}
-                    defaultZoom={12}
                 >
                     <MapInner
                         mapType={mapType}
                         setMapType={setMapType}
                     />
                 </Map>
+
+                {/*
+                    The search box and the tool bar sit *outside* the <Map>
+                    subtree on purpose. Inside it they share the library's
+                    z-index:0 wrapper, so their own z-index cannot lift the
+                    suggestion list above the map's own layers (which reach
+                    z-index 1000002 on a vector map). Out here they are
+                    siblings of the map, and the list paints over it.
+                */}
+                <MapTools />
             </div>
 
             {isMarkerCustomizeModalOpen && (placeMapOverlay) && (

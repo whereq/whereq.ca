@@ -102,7 +102,10 @@ const MapTools : React.FC = () => {
     };
 
     return (
-        <div className="absolute top-0 left-0 flex flex-col items-start 
+        // z-20 keeps the tool bar and the suggestion list above the map:
+        // this container is a sibling of <Map>, whose own wrapper sits at
+        // z-index 0, so the whole subtree paints over the map surface.
+        <div className="absolute top-0 left-0 z-20 flex flex-col items-start
                         space-y-1 bg-gray-900 text-orange-500 p-1">
             <div className="flex items-center space-x-1">
                 <MapSearchBox
