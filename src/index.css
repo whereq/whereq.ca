@@ -2,6 +2,23 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
+   Content sources
+   Tailwind v4 auto-detects sources by scanning the whole project,
+   which includes Markdown. A class name mentioned in a doc, a
+   release note or a comment would then be compiled into the
+   stylesheet - a real risk when the name is something like
+   `grid-cols-[5%,20%,35%,40%]`, whose compiled declaration is
+   invalid CSS. Register the real sources explicitly so only the
+   app's own files can contribute utilities.
+   Paths are relative to this file (src/).
+   ───────────────────────────────────────────────────────────── */
+@source "./**/*.{ts,tsx,js,jsx}";
+@source "../index.html";
+/* Markdown is excluded explicitly: `@source` only adds to Tailwind's
+   automatic detection, it does not replace it. */
+@source not "../**/*.md";
+
+/* ─────────────────────────────────────────────────────────────
    Body / html backgrounds
    The dark MetroUI palette is `#161b27` (Tailwind's gray-900-ish
    for our theme). Apply it at the root so:
