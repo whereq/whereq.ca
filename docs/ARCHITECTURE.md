@@ -1376,6 +1376,20 @@ predictions as plain data.
 `role="listbox"` / `role="option"`, arrow keys, Enter and Escape — and is
 the only map implementation left in the repo.
 
+**The field follows whereq.com's sidebar search.** One bordered control:
+a magnifier on the left, the input in the middle, a clear (×) on the
+right, and the suggestion list as a single dropdown attached to the field.
+The magnifier is the **submit** control — a query with suggestions picks
+the highlighted one, a query without one is geocoded — so there is no
+separate "Search" button beside the field. Two details that are easy to
+get wrong:
+
+- the placeholder and the typed text are *not* orange. The accent is for
+  selection, not for every glyph in the box;
+- the input carries `text-left` explicitly. The shell centres everything
+  (`ShellLayout` puts `text-align: center` on the page container), and an
+  input inherits it — the text would sit in the middle of the field.
+
 **Advanced markers follow Google's current element API.** Two rules, both
 enforced by the console on a vector map (and invisible on the raster
 fallback, which is why they went unnoticed):
