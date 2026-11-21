@@ -75,6 +75,10 @@ export const DEFAULT_LOCAL_SETTINGS: LocalSetting[] = [
 
 export const EVENT = {
     MAP_WORKSPACE_MY_MAP_CLICK: "map_workspace_my_map_click",
+    /** Shapes read from a JSON file, waiting to be drawn on the map. */
+    MAP_IMPORT_SHAPES: "map_import_shapes",
+    /** The map's answer: how many of those shapes were actually drawn. */
+    MAP_IMPORT_SHAPES_DONE: "map_import_shapes_done",
 }
 
 export const LOCAL_APP_EVENTS = "Local_App_Events";
