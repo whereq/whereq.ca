@@ -29,12 +29,12 @@ export const ScrollbarSection = () => {
                             key={row.id}
                             style={{
                                 padding: "10px 2px",
-                                borderBottom: "1px solid var(--uq-line)",
+                                borderBottom: "1px solid var(--color-metro-border)",
                                 fontSize: 12,
                             }}
                         >
-                            <span style={{ color: "var(--uq-ink)" }}>{row.label}</span>
-                            <span style={{ display: "block", marginTop: 2, fontSize: 11, color: "var(--uq-ink-dim)" }}>
+                            <span style={{ color: "var(--color-metro-text)" }}>{row.label}</span>
+                            <span style={{ display: "block", marginTop: 2, fontSize: 11, color: "var(--color-metro-text-dim)" }}>
                                 {row.detail}
                             </span>
                         </div>

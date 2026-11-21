@@ -452,34 +452,55 @@ component — the card renders whichever it is given), a `path` and an optional
 category tag, and animates the card up on hover. The Lab grid is its only
 consumer.
 
-### The Universe language inside the shell
+### One palette: MetroUI
 
-The app carries **two palettes**, and mixing them is the fastest way to make
-a page look wrong:
+The app wears **one** palette — MetroUI dark, mirrored from
+[whereq.github.io](https://whereq.github.io/): orange `#f5a623` accent on
+`#161b27`, cream `#f0e6c8` text, orange-tinted hairlines. The tokens live in
+the `@theme {}` block in `src/index.css` as `--color-metro-*`, and the older
+feature pages (`paws`, `tools`, `api-explorer`) already spoke it.
 
-- **MetroUI** (`--color-metro-*` in `src/index.css`) — orange `#f5a623` on
-  `#161b27`, cream `#f0e6c8` text, orange-tinted borders. This is the style
-  of the older feature pages (`paws`, `tools`, `api-explorer`), which still
-  use `text-orange-300` and `bg-gray-800` directly.
-- **Universe** (`--uq-*` in `src/index.css`) — the deep-space palette of the
-  marketing page at `/`: cool blue accent `#4da8f0`, ink `#e9eff6`, lines
-  `rgba(168, 190, 216, 0.12)`. The Universe page keeps its own page-local
-  copy of these tokens (it renders full-bleed, outside the shell), so the
-  shared subset lives on `:root` for the in-shell surfaces that want it.
+The **only** exception is the full-bleed Universe marketing page at `/`,
+which renders outside the shell and keeps its own deep-space palette
+(cool blue `#4da8f0`) in its page-local `features/universe/universe.css`.
+Nothing in the shell borrows from it.
 
 The **Lab hub** (`pages/home/Home.tsx`) and the **`@whereq/react` demo**
-(`features/react/`) are the two in-shell surfaces built on the Universe
-language. The Lab masthead is a two-column editorial block — a mono kicker
-over a hairline rule, a tight title, a constrained lede and a call to action
-on the left, a fact rail on the right — followed by a toolbar (the shared
-`SearchBox` + category chips) and the experiment grid. `pages/home/lab.css`
-and `features/react/react.css` hold those styles, both scoped under
-`.wq-lab` / `.wq-react`.
+(`features/react/`) are the two in-shell surfaces built on that palette. The
+Lab masthead is a two-column editorial block — a mono kicker over a hairline
+rule, a tight title, a constrained lede and a call to action on the left, a
+fact rail on the right — followed by a toolbar (the shared `SearchBox` +
+category chips) and the experiment grid. `pages/home/lab.css` and
+`features/react/react.css` hold those styles, both scoped under `.wq-lab` /
+`.wq-react`.
 
 **The shell centres everything.** `ShellLayout` puts `text-align: center` on
 the page container and it is inherited by every route, so a panel, a table or
 a paragraph reads centred unless it says otherwise. Both new surfaces state
 `text-align: left` explicitly.
+
+### The radius is the xs step everywhere
+
+The WhereQ universe's corner radius is **xs = 2px**, and it is the app's
+only radius. `src/index.css` enforces it twice:
+
+- the MetroUI ladder (`--radius-metro-xs` … `--radius-metro-lg`) collapses to
+  2px, and so does Tailwind's own scale (`--radius-xs` … `--radius-4xl`), so
+  `rounded-sm` / `rounded-md` / `rounded-lg` all resolve to 2px;
+- Tailwind v4's **bare** radius utilities (`rounded`, `rounded-l`,
+  `rounded-r`) are hardcoded at 0.25rem and are *not* theme-driven, so they
+  are overridden by unlayered rules in `src/index.css` (unlayered rules beat
+  Tailwind's `utilities` layer).
+
+`rounded-full` is deliberately left alone — a circle stays a circle.
+
+### Tailwind v4's preflight makes `<main>` a flex container
+
+Tailwind v4's preflight styles `main` as `display: flex; flex-direction:
+column`. Every block inside a `<main>` is therefore a **flex item**, and a
+flex item may shrink below its content: the demo's install block lost 8px
+of height and grew a scrollbar before its children were given
+`flex-shrink: 0`. The same applies to any panel built inside a `<main>`.
 
 ### The library's Tailwind classes need a `@source`
 

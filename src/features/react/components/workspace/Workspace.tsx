@@ -20,15 +20,15 @@ export const Workspace = () => {
 
     return (
         <Resizable
-            defaultSize={{ width: 380, height: "100%" }}
-            minWidth={300}
+            defaultSize={{ width: 440, height: "100%" }}
+            minWidth={320}
             maxWidth="45%"
             enable={{ right: true }}
             className="wq-react__workspace"
             handleStyles={{
                 right: {
                     cursor: "ew-resize",
-                    width: "4px",
+                    width: "3px",
                 },
             }}
             handleClasses={{ right: "bg-blue-500 hover:bg-blue-700" }}

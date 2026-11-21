@@ -7,7 +7,7 @@ export const Footer = () => {
       border-t border-[rgba(168,190,216,0.12)] px-2">
       <p className="text-center truncate">
         &copy; 2026 WhereQ · The Research Station of the{" "}
-        <a href="/" className="text-[#4DA8F0] hover:underline">
+        <a href="/" className="text-[#f5a623] hover:underline">
           WhereQ Universe
         </a>
       </p>

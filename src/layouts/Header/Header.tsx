@@ -76,7 +76,7 @@ export const Header = () => {
             to="/"
             title="WhereQ Universe"
             className={({ isActive }) =>
-              `hover:text-[#4DA8F0] transition-colors ${isActive ? "text-[#4DA8F0]" : ""}`
+              `hover:text-[#f5a623] transition-colors ${isActive ? "text-[#f5a623]" : ""}`
             }
             onClick={closeAppDrawer}
           >
@@ -86,7 +86,7 @@ export const Header = () => {
             to="/lab"
             title="Lab"
             className={({ isActive }) =>
-              `hover:text-[#4DA8F0] transition-colors ${isActive ? "text-[#4DA8F0]" : ""}`
+              `hover:text-[#f5a623] transition-colors ${isActive ? "text-[#f5a623]" : ""}`
             }
             onClick={closeAppDrawer} // Close AppLauncher on click
           >
@@ -96,7 +96,7 @@ export const Header = () => {
             to="/event-board"
             title="App Event Board"
             className={({ isActive }) =>
-              `hover:text-[#4DA8F0] transition-colors ${isActive ? "text-[#4DA8F0]" : ""}`
+              `hover:text-[#f5a623] transition-colors ${isActive ? "text-[#f5a623]" : ""}`
             }
             onClick={closeAppDrawer} // Close AppLauncher on click
           >
@@ -106,7 +106,7 @@ export const Header = () => {
             to="/about"
             title="About"
             className={({ isActive }) =>
-              `hover:text-[#4DA8F0] transition-colors ${isActive ? "text-[#4DA8F0]" : ""}`
+              `hover:text-[#f5a623] transition-colors ${isActive ? "text-[#f5a623]" : ""}`
             }
             onClick={closeAppDrawer} // Close AppLauncher on click
           >
@@ -116,7 +116,7 @@ export const Header = () => {
             to="/contact"
             title="Contact Us"
             className={({ isActive }) =>
-              `hover:text-[#4DA8F0] transition-colors ${isActive ? "text-[#4DA8F0]" : ""}`
+              `hover:text-[#f5a623] transition-colors ${isActive ? "text-[#f5a623]" : ""}`
             }
             onClick={closeAppDrawer} // Close AppLauncher on click
           >
@@ -130,7 +130,7 @@ export const Header = () => {
             to={isAuthenticated ? "/profile" : "/signin"}
             title={isAuthenticated ? "My Profile" : "Sign In/Sign Up"}
             className={({ isActive }) =>
-              `hover:text-[#4DA8F0] transition-colors ${isActive ? "text-[#4DA8F0]" : ""}`
+              `hover:text-[#f5a623] transition-colors ${isActive ? "text-[#f5a623]" : ""}`
             }
             onClick={closeAppDrawer}
           >

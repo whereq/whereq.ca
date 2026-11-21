@@ -5,7 +5,8 @@
    page's origin cells: a small framed icon tile, the name, a
    one-line description and a category tag pinned to the bottom.
 
-   Colours come from the shared `--uq-*` tokens (src/index.css).
+   Colours come from the app's MetroUI tokens (`--color-metro-*` in
+   src/index.css) and the corner radius is the xs step (2px).
    ============================================================ */
 
 .app-card {
@@ -14,10 +15,10 @@
   gap: 10px;
   height: 100%;
   padding: 16px 16px 14px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-card);
-  background: var(--uq-surface);
-  color: var(--uq-ink);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg-hover);
+  color: var(--color-metro-text);
   text-decoration: none;
   transition:
     border-color 0.18s ease,
@@ -27,14 +28,14 @@
 }
 
 .app-card:hover {
-  border-color: var(--uq-accent-line);
-  background: var(--uq-surface-hover);
+  border-color: var(--color-metro-border-hover);
+  background: #232b3d;
   transform: translateY(-3px);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
 }
 
 .app-card:focus-visible {
-  outline: 2px solid var(--uq-accent);
+  outline: 2px solid var(--color-metro-accent);
   outline-offset: 2px;
 }
 
@@ -43,10 +44,10 @@
   height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-tile);
-  background: var(--uq-accent-soft);
-  color: var(--uq-accent);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-accent-soft);
+  color: var(--color-metro-accent);
 }
 
 .app-card__icon {
@@ -58,13 +59,13 @@
   font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--uq-ink);
+  color: var(--color-metro-text);
 }
 
 .app-card__desc {
   font-size: 12px;
   line-height: 1.55;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
 }
 
 .app-card__foot {
@@ -78,7 +79,7 @@
 /* The category is the library's own <Tag>; only the colour scheme
    is re-mapped here so the chip reads like the rest of the Lab. */
 .app-card__foot .app-card__tag {
-  color: var(--uq-ink-dim);
-  border-color: var(--uq-line);
+  color: var(--color-metro-text-dim);
+  border-color: var(--color-metro-border);
   background: transparent;
 }

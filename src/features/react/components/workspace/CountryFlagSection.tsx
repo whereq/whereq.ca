@@ -34,7 +34,7 @@ export const CountryFlagSection = () => {
                                 fontSize: 10,
                                 letterSpacing: "0.12em",
                                 textTransform: "uppercase",
-                                color: "var(--uq-ink-dim)",
+                                color: "var(--color-metro-text-dim)",
                             }}
                         >
                             <CountryFlag country={flag.country} size={28} shape="rounded" />

@@ -6,10 +6,9 @@
    hairline rule, a tight display title, a constrained lede, and a
    fact rail instead of a wall of text.
 
-   The palette comes from the shared `--uq-*` tokens in
-   `src/index.css` (the page-local copy inside features/universe
-   stays untouched — that page renders full-bleed, outside the
-   shell). Every rule is scoped under `.wq-lab`.
+   The palette is the app's MetroUI one — the orange / cream / deep
+   slate of whereq.github.io (`--color-metro-*` in `src/index.css`).
+   Every rule is scoped under `.wq-lab`.
    ============================================================ */
 
 .wq-lab {
@@ -17,8 +16,11 @@
      inherited. The Lab states its own: every block reads left. */
   text-align: left;
   min-height: 100%;
-  background: var(--uq-shell);
-  color: var(--uq-ink);
+  /* The shell's <main> is a flex container (Tailwind preflight), so the
+     Lab is a flex item — it must not be squashed below its content. */
+  flex-shrink: 0;
+  background: var(--color-metro-bg);
+  color: var(--color-metro-text);
   font-family: 'Fira Code', monospace;
 }
 
@@ -29,7 +31,7 @@
   gap: 28px 44px;
   align-items: start;
   padding: 26px 0 24px;
-  border-bottom: 1px solid var(--uq-line);
+  border-bottom: 1px solid var(--color-metro-border);
 }
 
 .wq-lab .lab-kicker {
@@ -40,14 +42,14 @@
   font-size: 11px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--uq-accent);
+  color: var(--color-metro-accent);
 }
 
 .wq-lab .lab-kicker::before {
   content: "";
   width: 34px;
   height: 1px;
-  background: var(--uq-accent-line);
+  background: var(--color-metro-border-hover);
 }
 
 .wq-lab .lab-title {
@@ -56,7 +58,7 @@
   line-height: 1.04;
   letter-spacing: -0.03em;
   font-weight: 600;
-  color: var(--uq-ink);
+  color: var(--color-metro-text);
 }
 
 .wq-lab .lab-lede {
@@ -64,7 +66,7 @@
   max-width: 46em;
   font-size: 14px;
   line-height: 1.7;
-  color: var(--uq-ink-soft);
+  color: var(--color-metro-text-muted);
 }
 
 .wq-lab .lab-actions {
@@ -80,10 +82,10 @@
   align-items: center;
   gap: 8px;
   padding: 9px 16px;
-  border: 1px solid var(--uq-accent-line);
-  border-radius: var(--uq-r-ctl);
-  background: var(--uq-accent-soft);
-  color: var(--uq-accent);
+  border: 1px solid var(--color-metro-border-hover);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-accent-soft);
+  color: var(--color-metro-accent);
   font-size: 12px;
   letter-spacing: 0.04em;
   text-decoration: none;
@@ -91,24 +93,24 @@
 }
 
 .wq-lab .lab-cta:hover {
-  background: rgba(77, 168, 240, 0.18);
-  box-shadow: 0 0 22px rgba(77, 168, 240, 0.18);
+  background: rgba(245, 166, 35, 0.14);
+  box-shadow: 0 0 22px rgba(245, 166, 35, 0.18);
   transform: translateY(-1px);
 }
 
 .wq-lab .lab-meta {
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
 }
 
 /* ---------- fact rail ---------- */
 .wq-lab .lab-facts {
   margin: 0;
   padding: 4px 16px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-card);
-  background: rgba(28, 34, 51, 0.72);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg-hover);
 }
 
 .wq-lab .lab-fact {
@@ -117,7 +119,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 11px 0;
-  border-bottom: 1px solid var(--uq-line);
+  border-bottom: 1px solid var(--color-metro-border);
 }
 
 .wq-lab .lab-fact:last-child {
@@ -128,18 +130,18 @@
   font-size: 10.5px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
 }
 
 .wq-lab .lab-fact dd {
   margin: 0;
   font-size: 12.5px;
-  color: var(--uq-ink);
+  color: var(--color-metro-text);
   text-align: right;
 }
 
 .wq-lab .lab-fact dd b {
-  color: var(--uq-accent);
+  color: var(--color-metro-accent);
   font-weight: 600;
 }
 
@@ -150,7 +152,7 @@
   flex-wrap: wrap;
   gap: 12px 20px;
   padding: 16px 0 18px;
-  border-bottom: 1px solid var(--uq-line);
+  border-bottom: 1px solid var(--color-metro-border);
 }
 
 .wq-lab .lab-search {
@@ -173,10 +175,10 @@
   align-items: center;
   gap: 6px;
   padding: 4px 11px;
-  border: 1px solid var(--uq-line);
-  border-radius: 999px;
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
   background: transparent;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
   font-family: inherit;
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -186,18 +188,18 @@
 }
 
 .wq-lab .lab-chip:hover {
-  border-color: var(--uq-accent-line);
-  color: var(--uq-ink);
+  border-color: var(--color-metro-border-hover);
+  color: var(--color-metro-text);
 }
 
 .wq-lab .lab-chip--active {
-  border-color: var(--uq-accent-line);
-  background: var(--uq-accent-soft);
-  color: var(--uq-accent);
+  border-color: var(--color-metro-border-hover);
+  background: var(--color-metro-accent-soft);
+  color: var(--color-metro-accent);
 }
 
 .wq-lab .lab-chip:focus-visible {
-  outline: 2px solid var(--uq-accent);
+  outline: 2px solid var(--color-metro-accent);
   outline-offset: 2px;
 }
 
@@ -212,17 +214,17 @@
 .wq-lab .lab-empty {
   grid-column: 1 / -1;
   padding: 42px 16px;
-  border: 1px dashed var(--uq-line-strong);
-  border-radius: var(--uq-r-card);
+  border: 1px dashed var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
   text-align: center;
   font-size: 13px;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
 }
 
 .wq-lab .lab-empty b {
   display: block;
   margin-bottom: 6px;
-  color: var(--uq-ink-soft);
+  color: var(--color-metro-text-muted);
   font-weight: 600;
 }
 

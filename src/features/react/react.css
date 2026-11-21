@@ -1,9 +1,10 @@
 /* ============================================================
    WhereQ React — the @whereq/react demo
    ------------------------------------------------------------
-   The demo page follows the Lab's deep-space language (shared
-   `--uq-*` tokens from src/index.css): a rail of primitives, a
-   live workspace and a documentation panel.
+   The demo page follows the app's MetroUI language (`--color-metro-*`
+   in src/index.css): a rail of primitives, a live workspace and a
+   documentation panel. The rail and the workspace sit on the darker
+   panel tone, the way the reference site's sidebar does.
    ============================================================ */
 
 .wq-react {
@@ -12,9 +13,10 @@
   text-align: left;
   position: relative;
   display: flex;
+  --wq-react-panel: #0f1420;
   height: 100%;
-  background: var(--uq-shell);
-  color: var(--uq-ink);
+  background: var(--color-metro-bg);
+  color: var(--color-metro-text);
   font-family: 'Fira Code', monospace;
   overflow: hidden;
 }
@@ -28,38 +30,39 @@
   align-items: center;
   gap: 10px;
   padding: 18px 0;
-  border-right: 1px solid var(--uq-line);
-  background: var(--uq-bg-1);
+  border-right: 1px solid var(--color-metro-border);
+  background: var(--color-metro-bg);
   overflow-y: auto;
 }
 
 .wq-react__rail-button {
+  flex-shrink: 0;
   width: 2.5rem;
   height: 2.5rem;
   display: grid;
   place-items: center;
   border: 1px solid transparent;
-  border-radius: var(--uq-r-ctl);
+  border-radius: var(--radius-metro-xs);
   background: transparent;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
   font-size: 15px;
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .wq-react__rail-button:hover {
-  color: var(--uq-ink);
-  border-color: var(--uq-line);
+  color: var(--color-metro-text);
+  border-color: var(--color-metro-border);
 }
 
 .wq-react__rail-button.is-active {
-  color: var(--uq-accent);
-  border-color: var(--uq-accent-line);
-  background: var(--uq-accent-soft);
+  color: var(--color-metro-accent);
+  border-color: var(--color-metro-border-hover);
+  background: var(--color-metro-accent-soft);
 }
 
 .wq-react__rail-button:focus-visible {
-  outline: 2px solid var(--uq-accent);
+  outline: 2px solid var(--color-metro-accent);
   outline-offset: 2px;
 }
 
@@ -67,7 +70,7 @@
   width: 1.5rem;
   height: 1px;
   margin: 4px 0;
-  background: var(--uq-line);
+  background: var(--color-metro-border);
 }
 
 /* ---------- workspace ---------- */
@@ -77,9 +80,12 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px 20px 32px;
-  border-right: 1px solid var(--uq-line);
-  background: var(--uq-bg-1);
+  border-right: 1px solid var(--color-metro-border);
+  background: var(--wq-react-panel);
   overflow-y: auto;
+  /* The resize handle straddles the right edge, which would otherwise
+     give the panel a horizontal scrollbar. */
+  overflow-x: hidden;
 }
 
 /* ---------- main panel ---------- */
@@ -90,6 +96,15 @@
   padding: 24px 28px 48px;
 }
 
+/* Tailwind v4's preflight turns `<main>` into a flex container, so the
+   blocks inside it are flex items — and a flex item may shrink below
+   its content. Without this they get squashed (the install block lost
+   8px and grew a scrollbar). */
+.wq-react__main > *,
+.wq-react__workspace > * {
+  flex-shrink: 0;
+}
+
 .wq-react__kicker {
   display: flex;
   align-items: center;
@@ -98,14 +113,14 @@
   font-size: 11px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--uq-accent);
+  color: var(--color-metro-accent);
 }
 
 .wq-react__kicker::before {
   content: "";
   width: 34px;
   height: 1px;
-  background: var(--uq-accent-line);
+  background: var(--color-metro-border-hover);
 }
 
 .wq-react__title {
@@ -121,7 +136,7 @@
   max-width: 52em;
   font-size: 13.5px;
   line-height: 1.7;
-  color: var(--uq-ink-soft);
+  color: var(--color-metro-text-muted);
 }
 
 .wq-react__links {
@@ -136,18 +151,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-ctl);
-  color: var(--uq-ink-soft);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  color: var(--color-metro-text-muted);
   font-size: 11.5px;
   text-decoration: none;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
 .wq-react__link:hover {
-  border-color: var(--uq-accent-line);
-  background: var(--uq-accent-soft);
-  color: var(--uq-ink);
+  border-color: var(--color-metro-border-hover);
+  background: var(--color-metro-accent-soft);
+  color: var(--color-metro-text);
 }
 
 /* ---------- install block ---------- */
@@ -157,16 +172,16 @@
   align-items: center;
   gap: 14px;
   padding: 12px 16px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-ctl);
-  background: var(--uq-bg-2);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg);
   font-size: 12.5px;
-  color: var(--uq-ink);
+  color: var(--color-metro-text);
   overflow-x: auto;
 }
 
 .wq-react__install span {
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-size: 10px;
@@ -186,9 +201,9 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px 15px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-card);
-  background: var(--uq-surface);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg-hover);
   color: inherit;
   text-align: left;
   font-family: inherit;
@@ -197,13 +212,13 @@
 }
 
 .wq-react__primitive:hover {
-  border-color: var(--uq-accent-line);
-  background: var(--uq-surface-hover);
+  border-color: var(--color-metro-border-hover);
+  background: #232b3d;
   transform: translateY(-2px);
 }
 
 .wq-react__primitive:focus-visible {
-  outline: 2px solid var(--uq-accent);
+  outline: 2px solid var(--color-metro-accent);
   outline-offset: 2px;
 }
 
@@ -213,16 +228,16 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: var(--uq-r-tile);
-  background: var(--uq-accent-soft);
-  color: var(--uq-accent);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-accent-soft);
+  color: var(--color-metro-accent);
 }
 
 .wq-react__primitive-name {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--uq-ink);
+  color: var(--color-metro-text);
 }
 
 .wq-react__primitive-blurb {
@@ -230,14 +245,14 @@
   margin-top: 4px;
   font-size: 11.5px;
   line-height: 1.5;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
 }
 
 /* ---------- child page header ---------- */
 .wq-react__child {
   margin-top: 30px;
   padding-top: 22px;
-  border-top: 1px solid var(--uq-line);
+  border-top: 1px solid var(--color-metro-border);
 }
 
 .wq-react__child-title {
@@ -247,7 +262,7 @@
   margin: 0;
   font-size: 17px;
   font-weight: 600;
-  color: var(--uq-ink);
+  color: var(--color-metro-text);
 }
 
 .wq-react__child-blurb {
@@ -255,7 +270,7 @@
   max-width: 56em;
   font-size: 12.5px;
   line-height: 1.7;
-  color: var(--uq-ink-soft);
+  color: var(--color-metro-text-muted);
 }
 
 /* ---------- demo blocks ---------- */
@@ -265,14 +280,16 @@
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
 }
 
 .wq-react__demo {
+  min-width: 0;
+  max-width: 100%;
   padding: 16px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-card);
-  background: var(--uq-surface);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg-hover);
 }
 
 .wq-react__row {
@@ -284,10 +301,10 @@
 
 .wq-react__button {
   padding: 8px 14px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-ctl);
-  background: var(--uq-bg-2);
-  color: var(--uq-ink);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg);
+  color: var(--color-metro-text);
   font-family: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -295,13 +312,13 @@
 }
 
 .wq-react__button:hover {
-  border-color: var(--uq-accent-line);
-  background: var(--uq-accent-soft);
-  color: var(--uq-accent);
+  border-color: var(--color-metro-border-hover);
+  background: var(--color-metro-accent-soft);
+  color: var(--color-metro-accent);
 }
 
 .wq-react__button:focus-visible {
-  outline: 2px solid var(--uq-accent);
+  outline: 2px solid var(--color-metro-accent);
   outline-offset: 2px;
 }
 
@@ -309,26 +326,34 @@
   margin: 12px 0 0;
   font-size: 11.5px;
   line-height: 1.6;
-  color: var(--uq-ink-dim);
+  color: var(--color-metro-text-dim);
+}
+
+/* The library's Tag draws its pill variants with `rounded-full`. The
+   app's radius is the xs step everywhere, so the pill is squared too. */
+.wq-react .rounded-full {
+  border-radius: var(--radius-metro-xs);
 }
 
 /* ---------- code ---------- */
 .wq-react__code {
   margin: 0;
   padding: 14px 16px;
-  border: 1px solid var(--uq-line);
-  border-radius: var(--uq-r-ctl);
-  background: var(--uq-bg-2);
-  color: var(--uq-ink-soft);
+  border: 1px solid var(--color-metro-border);
+  border-radius: var(--radius-metro-xs);
+  background: var(--color-metro-bg);
+  color: var(--color-metro-text-muted);
   font-family: 'Fira Code', monospace;
   font-size: 11.5px;
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .wq-react__code b {
-  color: var(--uq-accent);
+  color: var(--color-metro-accent);
   font-weight: 400;
 }
 
@@ -341,8 +366,8 @@
   height: 100%;
   z-index: 30;
   padding: 20px;
-  border-left: 1px solid var(--uq-line);
-  background: var(--uq-bg-1);
+  border-left: 1px solid var(--color-metro-border);
+  background: var(--color-metro-bg);
   box-shadow: -18px 0 40px rgba(0, 0, 0, 0.45);
   overflow-y: auto;
 }
@@ -359,12 +384,12 @@
   gap: 10px;
   margin-top: 18px;
   font-size: 12px;
-  color: var(--uq-ink-soft);
+  color: var(--color-metro-text-muted);
   cursor: pointer;
 }
 
 .wq-react__toggle input {
-  accent-color: var(--uq-accent);
+  accent-color: var(--color-metro-accent);
   width: 15px;
   height: 15px;
 }
