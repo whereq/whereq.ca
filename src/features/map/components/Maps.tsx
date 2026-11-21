@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Map, useMap } from "@vis.gl/react-google-maps";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMap, faTreeCity } from "@fortawesome/free-solid-svg-icons";
@@ -132,6 +132,23 @@ const MapInner: React.FC<{
     );
 };
 
+/**
+ * How long the map may stay without a single rendered tile before the
+ * "still loading" notice appears.
+ *
+ * A vector map fetches its renderer and its style from Google before the
+ * first tile is drawn, so the first tile can take a while. This is only the
+ * point where the app stops waiting silently and tells the user that
+ * something is happening.
+ */
+const MAP_LOADING_HINT_MS = 8000;
+
+/**
+ * How long the map may stay empty before the notice turns into a "this did
+ * not work" message with a way out.
+ */
+const MAP_STALLED_MS = 20000;
+
 const Maps: React.FC = () => {
     const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
     // Read the map ID synchronously, during the first render. The map is
@@ -140,10 +157,55 @@ const Maps: React.FC = () => {
     // then refuses to render advanced markers on it.
     const [googleMapId] = useState(() => readGoogleMapCredentials().mapId);
 
+    /**
+     * True until the map has drawn its first tile.
+     *
+     * The map surface is an empty grey box while Google is still fetching the
+     * renderer and the map style, and a visitor cannot tell that apart from a
+     * broken map. The notice below the tools makes the difference visible.
+     */
+    const [hasRenderedTiles, setHasRenderedTiles] = useState(false);
+    /** True once the map has been waiting longer than the notice threshold. */
+    const [isLoadingSlowly, setIsLoadingSlowly] = useState(false);
+    /** True once the map has been empty long enough to count as stalled. */
+    const [hasStalled, setHasStalled] = useState(false);
+
     const { isMarkerCustomizeModalOpen } = useMapStore();
     const { placeMapOverlay } = usePlaceStore();
     const { overlayModalMode } = useOverlayStore();
     const { modalInfo, setModalInfo } = useModalStore();
+
+    const handleTilesLoaded = useCallback(() => {
+        setHasRenderedTiles(true);
+        setIsLoadingSlowly(false);
+        setHasStalled(false);
+    }, []);
+
+    // The notice only appears if the map is still waiting after the
+    // threshold. A map that is ready never shows it.
+    useEffect(() => {
+        if (hasRenderedTiles) {
+            return;
+        }
+        const timer = setTimeout(() => setIsLoadingSlowly(true), MAP_LOADING_HINT_MS);
+        return () => clearTimeout(timer);
+    }, [hasRenderedTiles]);
+
+    // A map that stays empty this long is not coming back on its own: the
+    // browser may have dropped the request for the map renderer. Reloading
+    // the page is the only reliable way to start over.
+    useEffect(() => {
+        if (hasRenderedTiles) {
+            return;
+        }
+        const timer = setTimeout(() => setHasStalled(true), MAP_STALLED_MS);
+        return () => clearTimeout(timer);
+    }, [hasRenderedTiles]);
+
+    /** Start the map over. */
+    const handleReloadMap = useCallback(() => {
+        window.location.reload();
+    }, []);
 
     return (
         <>
@@ -169,6 +231,7 @@ const Maps: React.FC = () => {
                     disableDefaultUI={true}
                     clickableIcons={false}
                     disableDoubleClickZoom={true}
+                    onTilesLoaded={handleTilesLoaded}
                 >
                     <MapInner
                         mapType={mapType}
@@ -185,6 +248,34 @@ const Maps: React.FC = () => {
                     siblings of the map, and the list paints over it.
                 */}
                 <MapTools />
+
+                {/*
+                    The map is still fetching its renderer and style. Show
+                    that, instead of leaving an empty grey box that looks
+                    broken.
+                */}
+                {!hasRenderedTiles && isLoadingSlowly && !hasStalled && (
+                    <div className="absolute bottom-2 left-1/2 z-30 -translate-x-1/2 rounded bg-gray-900 px-3 py-1 text-xs text-orange-300 shadow">
+                        Loading the map…
+                    </div>
+                )}
+
+                {/*
+                    The map stayed empty. The browser can drop the request for
+                    Google's map renderer, and only a fresh page load starts
+                    that request again - so offer exactly that.
+                */}
+                {!hasRenderedTiles && hasStalled && (
+                    <div className="absolute bottom-2 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded bg-gray-900 px-3 py-1 text-xs text-orange-300 shadow">
+                        <span>The map didn&apos;t load.</span>
+                        <button
+                            onClick={handleReloadMap}
+                            className="rounded border border-orange-400 px-2 py-0.5 text-orange-400 hover:bg-orange-400 hover:text-gray-900"
+                        >
+                            Try again
+                        </button>
+                    </div>
+                )}
             </div>
 
             {isMarkerCustomizeModalOpen && (placeMapOverlay) && (
