@@ -50,7 +50,7 @@ const MAP_SEARCH_THEME = {
     listDescription: "#8b949e",  // metro-text-muted
     listActiveBg: "#1f2937",     // gray-800
     listActiveText: "#fdba74",   // orange-300
-    radius: "4px",               // rounded
+    radius: "2px",               // the app's xs corner radius
     // shadow-xl
     shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
     fontSize: "14px",            // text-sm

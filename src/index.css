@@ -92,11 +92,26 @@ body {
   --color-metro-text-muted: #8b949e;
   --color-metro-text-dim: #6a737d;
 
-  /* xs (default for cards), sm, md, lg — 2/4/6/10 px */
+  /* Corner radius: the WhereQ universe's xs step (2px) is the app's
+     radius everywhere. The ladder collapses to a single step — the
+     MetroUI cards, the Lab tiles, the dialogs and the form fields
+     all sit on the same 2px corner. */
   --radius-metro-xs: 2px;
-  --radius-metro-sm: 4px;
-  --radius-metro-md: 6px;
-  --radius-metro-lg: 10px;
+  --radius-metro-sm: 2px;
+  --radius-metro-md: 2px;
+  --radius-metro-lg: 2px;
+
+  /* The same rule, applied to Tailwind's own radius scale so that
+     `rounded-sm` / `rounded-md` / `rounded-lg` … resolve to 2px too.
+     `rounded-full` is left alone — a circle stays a circle. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+  --radius-4xl: 2px;
 
   /* Override Tailwind's default `gray` palette so `bg-gray-900`,
      `bg-gray-800`, etc. resolve to the same MetroUI dark gray scale
@@ -119,54 +134,46 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   WhereQ Universe tokens
-   ------------------------------------------------------------
-   The Universe landing page (features/universe/universe.css) keeps
-   its own page-local copy of these values because it renders
-   full-bleed, outside the app shell. The in-shell surfaces — the
-   Lab hub and the @whereq/react demo — need the same palette but
-   cannot reach into a page-scoped stylesheet, so the shared subset
-   lives here on `:root`.
-   ───────────────────────────────────────────────────────────── */
-:root {
-  --uq-bg-0: #05080e;
-  --uq-bg-1: #0a0e13;
-  --uq-bg-2: #0e141c;
-  --uq-bg-3: #121a24;
-  --uq-shell: #161b27;
-  --uq-surface: #1c2233;
-  --uq-surface-hover: #232b3d;
-  --uq-line: rgba(168, 190, 216, 0.12);
-  --uq-line-strong: rgba(168, 190, 216, 0.22);
-  --uq-ink: #e9eff6;
-  --uq-ink-soft: #aab7c9;
-  --uq-ink-dim: #6e7c90;
-  --uq-accent: #4da8f0;
-  --uq-accent-soft: rgba(77, 168, 240, 0.08);
-  --uq-accent-line: rgba(77, 168, 240, 0.45);
-  --uq-r-ctl: 4px;
-  --uq-r-card: 8px;
-  --uq-r-tile: 4px;
-}
-
-/* ─────────────────────────────────────────────────────────────
    @whereq/react theme tokens
    ------------------------------------------------------------
    The library's Tag and Toast paint themselves with these
    consumer-supplied variables (its own components never hardcode
-   a colour). The Lab supplies the WhereQ universe flavour so the
-   shared components sit natively inside the app.
+   a colour). The app supplies the WhereQ universe's MetroUI
+   flavour so the shared components sit natively inside the app.
    ───────────────────────────────────────────────────────────── */
 :root {
-  --rule: rgba(168, 190, 216, 0.14);
-  --text: #e9eff6;
-  --text-dim: #aab7c9;
-  --text-faint: #6e7c90;
-  --bg-soft: #121a24;
-  --accent: #4da8f0;
+  --rule: rgba(245, 166, 35, 0.16);
+  --text: #f0e6c8;
+  --text-dim: #8b949e;
+  --text-faint: #6a737d;
+  --bg-soft: #1c2233;
+  --accent: #f5a623;
   --up: #3fd68f;
   --down: #f47b6b;
   --nova: #f4b33d;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Radius — the app's single corner step
+   ------------------------------------------------------------
+   Tailwind v4's *bare* radius utilities (`rounded`, `rounded-l`,
+   `rounded-r`) are fixed at 0.25rem and are not theme-driven, so
+   they are overridden here. Unlayered rules beat Tailwind's
+   `utilities` layer, so these win. The named steps (`rounded-md`,
+   `rounded-lg`, …) follow the `--radius-*` theme values above.
+   ───────────────────────────────────────────────────────────── */
+.rounded {
+  border-radius: 2px;
+}
+
+.rounded-l {
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+.rounded-r {
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
 }
 
 /* ─────────────────────────────────────────────────────────────
