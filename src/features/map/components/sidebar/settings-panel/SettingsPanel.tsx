@@ -207,7 +207,14 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
     const anySelected = rows.some((row) => row.selected);
 
     return (
-        <div className="fixed top-15 left-12 right-12 h-[calc(100%-76px)] flex flex-col overflow-hidden border border-gray-700 bg-gray-900 text-left">
+        // The panel covers the map area exactly: it starts after the map's
+        // left bar (w-16 = 64px) and the app header (3.125rem), and it stops
+        // at the app footer (3.125rem). It never overlaps the header, the
+        // left bar or the footer, and it leaves no strip of map showing.
+        // z-40 puts it above the map's own tool bar (z-20), which is a
+        // sibling of the map surface and would otherwise paint over the
+        // panel's top-left corner.
+        <div className="fixed left-16 top-[3.125rem] right-0 bottom-[3.125rem] z-40 flex flex-col overflow-hidden border border-gray-700 bg-gray-900 text-left">
 
             <div className="shrink-0 border-b border-gray-700 bg-gray-900 p-4">
                 <div className="mb-2 flex flex-wrap items-center gap-3">

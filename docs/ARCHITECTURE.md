@@ -1296,6 +1296,29 @@ everything (`ShellLayout` puts `text-align: center` on the page
 container), so without it the notice and the table cells render
 centered.
 
+**The map camera must never be a controlled prop.**
+`<Map>` is given `defaultCenter` / `defaultZoom`, **not** `center` /
+`zoom`. The library treats `center` and `zoom` as controlled: its
+`useMapCameraParams` hook runs on *every* render of the `<Map>`
+component, compares the live map's camera against the props, and calls
+`map.moveCamera()` whenever they differ. That silently undoes every
+programmatic camera move the app makes — the search result's `panTo` +
+`setZoom(15)` in `useHandleSelectedPlace`, and `fitBounds` in the
+overlay code — because the props win on the very next render.
+
+The symptom is easy to miss and looks like "the map is broken": the
+search resolves the address (the `GetPlace` call returns 200, the input
+fills in, the recent-search list is written) but the map stays exactly
+where it was and nothing appears on it. `defaultCenter` / `defaultZoom`
+give the same initial view without the camera being pinned.
+
+**The search box and the tool bar live outside the `<Map>` subtree.**
+They are siblings of `<Map>` inside the `relative h-full w-full` wrapper,
+with `z-20`, and the settings panel sits above both at `z-40`. Inside
+`<Map>` they would share the library's `z-index: 0` wrapper, and the
+map's own layers reach `z-index: 1000002` on a vector map — so the
+suggestion list could not reliably paint over the map surface.
+
 **Search is our own suggestion list, not Google's widget.**
 `google.maps.places.Autocomplete` was closed to new customers on
 March 1, 2025. Google still loads the class and still answers its
