@@ -105,9 +105,12 @@ const MapTools : React.FC = () => {
         // z-20 keeps the tool bar and the suggestion list above the map:
         // this container is a sibling of <Map>, whose own wrapper sits at
         // z-index 0, so the whole subtree paints over the map surface.
-        <div className="absolute top-0 left-0 z-20 flex flex-col items-start
+        // `items-stretch` makes the search field span the full width of the
+        // panel — the tool bar below it sets that width, so the two line up
+        // instead of the field leaving a gap on the right.
+        <div className="absolute top-0 left-0 z-20 flex flex-col items-stretch
                         space-y-1 bg-gray-900 text-orange-500 p-1">
-            <div className="flex items-center space-x-1">
+            <div className="flex w-full items-stretch">
                 <MapSearchBox
                     onSelectPlace={handlePlaceSelected}
                     onSubmitText={handleSearchText}
