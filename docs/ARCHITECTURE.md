@@ -1273,6 +1273,29 @@ Three consequences worth knowing:
   after the deployment key is rotated. The panel also says whether the map
   is currently running on the shared WhereQ key.
 
+**The map settings panel is a real `<table>`.**
+`components/sidebar/settings-panel/SettingsPanel.tsx` renders a `<table>`
+with a `<thead>` (a sticky header row) and a `<tbody>` of two rows — the
+API key and the map ID. A row header (`<th scope="row">`) holds the
+setting name, the value and the description are text inputs, and the
+first column is a checkbox that feeds the **Clear selected** action:
+ticking a row and pressing the trash empties that field, which is how a
+visitor goes back from their own key to the shared one.
+
+It used to be a CSS grid pretending to be a table, and it was broken:
+`grid-cols-[5%,20%,35%,40%]` compiles to
+`grid-template-columns:5%,20%,35%,40%`, which is **invalid CSS** — a
+grid track list is space-separated, not comma-separated. The browser
+keeps the selector, drops the declaration, and the "table" collapses
+into one stacked column. The correct arbitrary value is
+`grid-cols-[5%_20%_35%_40%]` (underscores for spaces). The same defect
+was in the api-explorer settings panel and was fixed there too.
+
+The panel also sets `text-left` explicitly: the app shell centres
+everything (`ShellLayout` puts `text-align: center` on the page
+container), so without it the notice and the table cells render
+centered.
+
 **Search is our own suggestion list, not Google's widget.**
 `google.maps.places.Autocomplete` was closed to new customers on
 March 1, 2025. Google still loads the class and still answers its
