@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faUndo, faSave } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faUndo, faSave, faTrash } from "@fortawesome/free-solid-svg-icons";
 import CustomModal from "@/components/modals/CustomModal"; // Import the reusable modal
 import { API_KEY, GOOGLE_MAP_ID, MAP_LOCAL_STORAGE_KEYS } from "@/features/map/utils/constants";
 import {
@@ -10,13 +10,14 @@ import {
     readSavedMapCredentials,
 } from "@/features/map/utils/mapCredentials";
 import LocalStorageHelper from "@/utils/localStorageHelper";
-import React from "react";
 
 type Row = {
     selected: boolean;
     key: string;
     value: string;
     description: string;
+    /** Shown while the field is empty. Never stored. */
+    placeholder: string;
 }
 
 export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
@@ -29,8 +30,20 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
     const [rows, setRows] = useState<Row[]>(() => {
         const { apiKey, mapId } = readGoogleMapCredentials();
         return [
-            { selected: false, key: API_KEY, value: apiKey || "Enter Your Google Map API Key", description: "Your Google Map API Key" },
-            { selected: false, key: GOOGLE_MAP_ID, value: mapId || "Enter Your Google Map ID", description: "Your Google Map ID" },
+            {
+                selected: false,
+                key: API_KEY,
+                value: apiKey,
+                description: "Your Google Map API Key",
+                placeholder: "Enter Your Google Map API Key",
+            },
+            {
+                selected: false,
+                key: GOOGLE_MAP_ID,
+                value: mapId,
+                description: "Your Google Map ID",
+                placeholder: "Enter Your Google Map ID",
+            },
         ];
     });
     const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -74,15 +87,28 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
         setUnsavedChanges(true);
     };
 
+    /** Empty the selected fields. The change is applied when the user saves. */
+    const handleClearSelected = () => {
+        const selectedCount = rows.filter((row) => row.selected).length;
+        if (selectedCount === 0) {
+            return;
+        }
+        setRows((prevRows) =>
+            prevRows.map((row) => (row.selected ? { ...row, value: "" } : row))
+        );
+        setUnsavedChanges(true);
+        setModalInfo({
+            isOpen: true,
+            title: "Cleared",
+            message: `${selectedCount === 1 ? "1 field has" : `${selectedCount} fields have`} been emptied. Press Save to apply.`,
+        });
+    };
+
     const handleSave = () => {
         const deployment = readDeploymentMapCredentials();
 
         const settingsToSave = rows.reduce((acc, row) => {
-            // An untouched field still holds its placeholder text. Saving that
-            // would store the placeholder as the actual credential.
-            const isPlaceholder = row.value === "Enter Your Google Map API Key"
-                || row.value === "Enter Your Google Map ID";
-            acc[row.key] = isPlaceholder ? "" : row.value.trim();
+            acc[row.key] = row.value.trim();
             return acc;
         }, {} as Record<string, string>);
 
@@ -150,8 +176,7 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
         setRows((prevRows) =>
             prevRows.map((row) => {
                 const savedValue = row.key === API_KEY ? apiKey : mapId;
-                const defaultValue = row.key === API_KEY ? "Enter Your Google Map API Key" : "Enter Your Google Map ID";
-                return { ...row, value: savedValue || defaultValue };
+                return { ...row, value: savedValue };
             })
         );
         setUnsavedChanges(false);
@@ -178,96 +203,82 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
         }
     };
 
-    // Handle focus on the "Value" cell
-    const handleFocus = (index: number) => {
-        const key = rows[index].key;
-        switch (key) {
-            case API_KEY:
-                if (rows[index].value === "Enter Your Google Map API Key") {
-                    updateRow(index, "value", "");
-                }
-                break;
-            case GOOGLE_MAP_ID:
-                if (rows[index].value === "Enter Your Google Map ID") {
-                    updateRow(index, "value", "");
-                }
-                break;
-            default:
-                break;
-        }
-    };
-
-    // Handle blur on the "Value" cell
-    const handleBlur = (index: number) => {
-        const key = rows[index].key;
-        switch (key) {
-            case API_KEY:
-                if (!rows[index].value) {
-                    updateRow(index, "value", "Enter Your Google Map API Key");
-                }
-                break;
-            case GOOGLE_MAP_ID:
-                if (!rows[index].value) {
-                    updateRow(index, "value", "Enter Your Google Map ID");
-                }
-                break;
-            default:
-                break;
-        }
-    };
+    const allSelected = rows.length > 0 && rows.every((row) => row.selected);
+    const anySelected = rows.some((row) => row.selected);
 
     return (
-        <div className="fixed top-15 left-12 w-[calc(100%-3rem)] h-[calc(100%-76px)] bg-black text-orange font-fira flex flex-col border border-gray-700">
+        <div className="fixed top-15 left-12 right-12 h-[calc(100%-76px)] flex flex-col overflow-hidden border border-gray-700 bg-gray-900 text-left">
 
-            <div className="flex flex-col p-4 bg-gray-900 border border-gray-700 rounded-lg">
-                <h2 className="text-lg font-bold text-orange-400 mb-2">Important Notice</h2>
-                <p className="text-sm text-gray-300 mb-2">
-                    The <span className="font-semibold text-orange-400">WhereQ Map Application</span> is built on
-                    <span className="font-bold text-blue-400"> Google Maps</span> technology.
-                    {isUsingSharedKey ? (
-                        <>
-                            It is already running on the shared
-                            <span className="font-semibold text-yellow-400"> WhereQ Maps key</span>, so the map works
-                            straight away - there is nothing you have to do.
-                        </>
-                    ) : (
-                        <>
-                            To use this application, a valid
-                            <span className="font-semibold text-yellow-400"> Google Maps API Key</span> and
-                            <span className="font-semibold text-yellow-400"> Map ID</span> are required.
-                        </>
+            <div className="shrink-0 border-b border-gray-700 bg-gray-900 p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-3">
+                    <h2 className="text-lg font-bold text-orange-400">Important Notice</h2>
+                    {isUsingSharedKey && (
+                        <span className="rounded border border-green-500/40 bg-green-500/10 px-2 py-0.5 text-xs text-green-300">
+                            Using the shared WhereQ key
+                        </span>
                     )}
-                </p>
-                <p className="text-sm text-gray-300 mb-2">
-                    You can keep using the shared key, or enter your own
-                    <span className="font-semibold text-yellow-400"> API Key</span> and
-                    <span className="font-semibold text-yellow-400"> Map ID</span> in the settings section below to use
-                    them instead. Your own values are stored only in your browser's
-                    <span className="font-semibold text-blue-400"> local storage</span>, and they take precedence over
-                    the shared key.
-                    <span className="font-semibold text-orange-400">WhereQ</span> does not access, store, or share any
-                    <span className="font-bold text-red-400"> personal information</span> or data from your device under any circumstances.
-                </p>
-                <p className="text-sm text-gray-300 mb-2">
-                    For more details, please refer to the following guide:
-                    <a
-                        href="https://whereq.github.io/2025/01/08/Building-a-Google-Maps-Application-with-React-and-TypeScript/"
-                        className="text-blue-400 underline hover:text-blue-300 font-semibold"
-                    >
-                        Apply Google Maps API Key and Create a Map ID
-                    </a>
-                    .
-                </p>
+                </div>
+                {/* A measure limit keeps the line length readable instead of
+                    letting the text run the full width of a wide screen. */}
+                <div className="max-w-4xl space-y-2 text-sm leading-relaxed text-gray-300">
+                    <p>
+                        The <span className="font-semibold text-orange-400">WhereQ Map Application</span> is built on
+                        <span className="font-bold text-blue-400"> Google Maps</span> technology.
+                        {isUsingSharedKey ? (
+                            <>
+                                {" "}It is running on the shared
+                                <span className="font-semibold text-yellow-400"> WhereQ Maps key</span>, so the map works
+                                straight away - there is nothing you have to do.
+                            </>
+                        ) : (
+                            <>
+                                {" "}To use this application, a valid
+                                <span className="font-semibold text-yellow-400"> Google Maps API Key</span> and
+                                <span className="font-semibold text-yellow-400"> Map ID</span> are required.
+                            </>
+                        )}
+                    </p>
+                    <p>
+                        You can keep using the shared key, or enter your own
+                        <span className="font-semibold text-yellow-400"> API Key</span> and
+                        <span className="font-semibold text-yellow-400"> Map ID</span> in the settings section below to use
+                        them instead. Your own values are stored only in your browser's
+                        <span className="font-semibold text-blue-400"> local storage</span>, and they take precedence over
+                        the shared key.
+                        <span className="font-semibold text-orange-400">WhereQ</span> does not access, store, or share any
+                        <span className="font-bold text-red-400"> personal information</span> or data from your device under any circumstances.
+                    </p>
+                    <p>
+                        For more details, please refer to the following guide:
+                        <a
+                            href="https://whereq.github.io/2025/01/08/Building-a-Google-Maps-Application-with-React-and-TypeScript/"
+                            className="text-blue-400 underline hover:text-blue-300 font-semibold"
+                        >
+                            Apply Google Maps API Key and Create a Map ID
+                        </a>
+                        .
+                    </p>
+                </div>
             </div>
 
             {/* Header and buttons */}
-            <div className="flex justify-between items-center px-4 py-2 bg-gray-900 border-b border-gray-700">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-700 bg-gray-900 px-4 py-2">
                 <h2 className="text-lg">Settings</h2>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleClearSelected}
+                        disabled={!anySelected}
+                        className="text-orange hover:text-yellow-400 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Clear the selected fields"
+                        aria-label="Clear the selected fields"
+                    >
+                        <FontAwesomeIcon icon={faTrash} />
+                    </button>
                     <button
                         onClick={handleRevert}
                         className="text-orange hover:text-yellow-400"
                         title="Revert"
+                        aria-label="Revert to the saved settings"
                     >
                         <FontAwesomeIcon icon={faUndo} />
                     </button>
@@ -275,12 +286,15 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                         onClick={handleSave}
                         className="text-orange hover:text-yellow-400"
                         title="Save"
+                        aria-label="Save the settings"
                     >
                         <FontAwesomeIcon icon={faSave} />
                     </button>
                     <button
                         onClick={handleClose}
                         className="text-orange hover:text-yellow-400"
+                        title="Close"
+                        aria-label="Close the settings panel"
                     >
                         <FontAwesomeIcon icon={faTimes} />
                     </button>
@@ -288,63 +302,70 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
             </div>
 
             {/* Settings table */}
-            <div className="flex-grow overflow-y-auto">
-                <div className="grid grid-cols-[5%,20%,35%,40%] gap-0 border border-gray-700">
-                    <div className="bg-gray-800 text-center font-bold border border-gray-700">
-                        <input
-                            type="checkbox"
-                            checked={rows.every((row) => row.selected)}
-                            onChange={(e) => toggleSelectAll(e.target.checked)}
-                            className="w-4 h-4 mx-auto"
-                        />
-                    </div>
-                    <div className="bg-gray-800 text-center font-bold border border-gray-700">Key</div>
-                    <div className="bg-gray-800 text-center font-bold border border-gray-700">Value</div>
-                    <div className="bg-gray-800 text-center font-bold border border-gray-700">Description</div>
-                    {rows.map((row, index) => (
-                        <React.Fragment key={index}>
-                            <div className="border border-gray-700 flex items-center justify-center">
+            <div className="flex-grow overflow-auto">
+                <table className="w-full border-collapse text-sm">
+                    <thead>
+                        <tr className="bg-gray-800 text-orange-300">
+                            <th scope="col" className="sticky top-0 z-10 w-12 border border-gray-700 bg-gray-800 px-2 py-2 text-center">
                                 <input
                                     type="checkbox"
-                                    checked={row.selected}
-                                    onChange={(e) => updateRow(index, "selected", e.target.checked)}
-                                    className="w-4 h-4"
+                                    checked={allSelected}
+                                    onChange={(e) => toggleSelectAll(e.target.checked)}
+                                    className="w-4 h-4 mx-auto"
+                                    aria-label="Select all settings"
                                 />
-                            </div>
-                            <div className="border border-gray-700 flex items-center px-2">
-                                <input
-                                    type="text"
-                                    value={row.key}
-                                    readOnly
-                                    className="w-full bg-transparent text-orange outline-none"
-                                />
-                            </div>
-                            <div className="border border-gray-700 bg-gray-900 flex items-center px-2">
-                                <input
-                                    type="text"
-                                    value={row.value}
-                                    onChange={(e) => updateRow(index, "value", e.target.value)}
-                                    onFocus={() => handleFocus(index)}
-                                    onBlur={() => handleBlur(index)}
-                                    className={`w-full bg-transparent outline-none ${row.value === "Enter Your Google Map API Key"
-                                            ? "text-gray-500 italic"
-                                            : "text-orange"
-                                        }`}
-
-                                />
-                            </div>
-
-                            <div className="border border-gray-700 flex items-center px-2">
-                                <input
-                                    type="text"
-                                    value={row.description}
-                                    onChange={(e) => updateRow(index, "description", e.target.value)}
-                                    className="w-full bg-transparent text-orange outline-none"
-                                />
-                            </div>
-                        </React.Fragment>
-                    ))}
-                </div>
+                            </th>
+                            <th scope="col" className="sticky top-0 z-10 w-[18%] border border-gray-700 bg-gray-800 px-3 py-2 text-left">
+                                Key
+                            </th>
+                            <th scope="col" className="sticky top-0 z-10 w-[42%] border border-gray-700 bg-gray-800 px-3 py-2 text-left">
+                                Value
+                            </th>
+                            <th scope="col" className="sticky top-0 z-10 w-[40%] border border-gray-700 bg-gray-800 px-3 py-2 text-left">
+                                Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row, index) => (
+                            <tr key={row.key} className="bg-gray-900 hover:bg-gray-800/60">
+                                <td className="border border-gray-700 px-2 py-1 text-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={row.selected}
+                                        onChange={(e) => updateRow(index, "selected", e.target.checked)}
+                                        className="w-4 h-4"
+                                        aria-label={`Select ${row.key}`}
+                                    />
+                                </td>
+                                <th scope="row" className="border border-gray-700 px-3 py-1 text-left font-normal text-orange">
+                                    {row.key}
+                                </th>
+                                <td className="border border-gray-700 px-3 py-1">
+                                    <input
+                                        type="text"
+                                        value={row.value}
+                                        placeholder={row.placeholder}
+                                        onChange={(e) => updateRow(index, "value", e.target.value)}
+                                        className="w-full min-w-0 bg-transparent text-orange outline-none focus:text-yellow-300 placeholder:text-gray-500"
+                                        aria-label={`${row.key} value`}
+                                        spellCheck={false}
+                                        autoComplete="off"
+                                    />
+                                </td>
+                                <td className="border border-gray-700 px-3 py-1">
+                                    <input
+                                        type="text"
+                                        value={row.description}
+                                        onChange={(e) => updateRow(index, "description", e.target.value)}
+                                        className="w-full min-w-0 bg-transparent text-orange outline-none"
+                                        aria-label={`${row.key} description`}
+                                    />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
 
             <CustomModal

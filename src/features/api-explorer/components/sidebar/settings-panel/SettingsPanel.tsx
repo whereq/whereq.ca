@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faUndo, faSave } from "@fortawesome/free-solid-svg-icons";
 import Modal from "react-modal";
@@ -117,21 +117,25 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                 </div>
             </div>
             <div className="flex-grow overflow-y-auto">
-                <div className="grid grid-cols-[5%,20%,35%,40%] gap-0 border border-gray-700">
+                {/* A grid track list is space-separated. Commas make the
+                    declaration invalid CSS, the browser drops it, and the
+                    table collapses into a single stacked column. */}
+                <div className="grid grid-cols-[5%_20%_35%_40%] gap-0 border border-gray-700">
                     <div className="bg-gray-800 text-center font-bold border border-gray-700">
                         <input
                             type="checkbox"
                             checked={rows.every((row) => row.selected)}
                             onChange={(e) => toggleSelectAll(e.target.checked)}
                             className="w-4 h-4 mx-auto"
+                            aria-label="Select all settings"
                         />
                     </div>
                     <div className="bg-gray-800 text-center font-bold border border-gray-700">Key</div>
                     <div className="bg-gray-800 text-center font-bold border border-gray-700">Value</div>
                     <div className="bg-gray-800 text-center font-bold border border-gray-700">Description</div>
                     {rows.map((row, index) => (
-                        <>
-                            <div key={`select-${index}`} className="border border-gray-700 flex items-center justify-center">
+                        <React.Fragment key={`row-${index}`}>
+                            <div className="border border-gray-700 flex items-center justify-center">
                                 <input
                                     type="checkbox"
                                     checked={row.selected}
@@ -139,9 +143,10 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                                         updateRow(index, "selected", e.target.checked)
                                     }
                                     className="w-4 h-4"
+                                    aria-label={`Select ${row.key}`}
                                 />
                             </div>
-                            <div key={`key-${index}`} className="border border-gray-700 flex items-center px-2">
+                            <div className="border border-gray-700 flex items-center px-2">
                                 <input
                                     type="text"
                                     value={row.key}
@@ -149,7 +154,7 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                                     className="w-full bg-transparent text-orange outline-none"
                                 />
                             </div>
-                            <div key={`value-${index}`} className="border border-gray-700 flex items-center px-2">
+                            <div className="border border-gray-700 flex items-center px-2">
                                 <input
                                     type="text"
                                     value={row.value}
@@ -159,7 +164,7 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                                     className="w-full bg-transparent text-orange outline-none"
                                 />
                             </div>
-                            <div key={`desc-${index}`} className="border border-gray-700 flex items-center px-2">
+                            <div className="border border-gray-700 flex items-center px-2">
                                 <input
                                     type="text"
                                     value={row.description}
@@ -169,7 +174,7 @@ export const SettingPanel = ({ onClose }: { onClose: () => void }) => {
                                     className="w-full bg-transparent text-orange outline-none"
                                 />
                             </div>
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
             </div>
