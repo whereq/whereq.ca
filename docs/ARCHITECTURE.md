@@ -1555,6 +1555,110 @@ from the code:**
   which unblocks the imagery — verified end-to-end, including the
   FFmpeg cut smoke test and the Pyodide CDN payload.
 
+**Polygons and polylines can be exported to a file and imported back.**
+The tool bar carries two more buttons (`faFileExport` / `faFileImport`):
+the first writes the drawn polygons and polylines to a JSON file, the
+second reads such a file and draws it on the map.
+
+The interchange format is **GeoJSON (RFC 7946)** — not a bespoke
+format. A file is a `FeatureCollection` whose features carry a
+`geometry` (`Polygon` / `LineString`) and a `properties` object, plus a
+foreign `whereq` member (allowed by RFC 7946 §6.1) holding this app's
+own metadata:
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "0f0c…",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-79.38, 43.65], [-79.37, 43.66], [-79.38, 43.65]]]
+      },
+      "properties": {
+        "name": "Block A",
+        "description": "",
+        "strokeColor": "#343A40",
+        "strokeWeight": 4,
+        "fillColor": "#343A4080"
+      }
+    }
+  ],
+  "whereq": {
+    "app": "whereq.ca",
+    "version": "1.0",
+    "exportedAt": "2026-11-21T18:04:05.678Z",
+    "shapeCount": 1
+  }
+}
+```
+
+GeoJSON was chosen so the files are useful outside this app: they open in
+QGIS, Google Earth and ArcGIS as they are. The rules the format imposes
+are followed exactly:
+
+- a position is **`[longitude, latitude]`** — the opposite of the
+  `{lat, lng}` literals the Maps API uses. The flip happens in exactly
+  one place (`toGeoJsonPosition` / `fromGeoJsonPosition` in
+  `utils/geoJson.ts`), so there is no second place to get it wrong;
+- a polygon's exterior ring is **closed** (its last position repeats its
+  first) and winds **counter-clockwise**, as RFC 7946 §3.1.6 asks. The
+  map draws a ring in click order, so the winding is normalised on the
+  way out;
+- only the two *path* shapes are exchanged: `Polygon` ↔
+  `MapOverlayType.Polygon` and `LineString` ↔ `MapOverlayType.Polyline`.
+  Markers, circles and rectangles are left out on purpose — they are not
+  paths, and a circle has no GeoJSON equivalent.
+
+`utils/geoJson.ts` holds the schema and the pure functions:
+`overlaysToGeoJson()` and `parseShapeDocument()`. `utils/shapeTransfer.ts`
+holds the browser side: `buildShapeFileName()`
+(`whereq-shapes-YYYY-MM-DD.json`) and `downloadShapeDocument()` (a blob
+with the `application/geo+json` type, whose object URL is revoked a
+moment after the click).
+
+**The reader is forgiving about the document and strict about the
+geometry.** A file that is not JSON, or not a GeoJSON document at all,
+is refused with a message the visitor can act on ("That file is not a
+shapes file."). But one unusable *feature* never costs the visitor the
+rest: a feature whose geometry cannot be used — a `Point`, a ring with
+fewer than three distinct vertices, a position out of range — is skipped
+and counted, and the count is reported in the notice ("Added 2 shapes to
+the map; 1 could not be read."). A single `Feature`, a bare geometry and
+a plain array of either are all accepted too, because the file may well
+have come from another tool. `MultiPolygon` and `MultiLineString` become
+one overlay per part.
+
+**Import travels over the event bus, because the tool bar cannot reach
+the map.** `MapTools` is rendered *outside* the `<Map>` subtree on
+purpose (so the suggestion list can paint over the map), so it has no
+handle on the live `google.maps.Map`. It therefore sends the parsed
+shapes over `EVENT.MAP_IMPORT_SHAPES`, and `MapDrawingController` —
+which is inside `<Map>` and owns the map — picks them up and draws each
+one through `completePath`, the *same* path a hand-drawn shape takes.
+The styles, the listeners, the model entry, the native overlay array and
+the save button therefore all behave exactly as they do for a drawn
+shape. The imported shapes get fresh ids (the drawing handlers generate
+them), and their name and description travel from the file's
+`properties`.
+
+The answer travels back the same way: the controller emits
+`EVENT.MAP_IMPORT_SHAPES_DONE` with the number of shapes it really
+drew, and only then does the tool bar say "Added N shapes to the map."
+A map that is not ready cannot be mistaken for a successful import.
+
+Two small rules that the drawing controller obeys because the imported
+shapes expose them:
+
+- a ring that already ends where it starts must **not** be closed a
+  second time — that would leave a duplicate vertex on the editable
+  polygon, and the duplicate would come back out in the next export;
+- the name and the description must be set **before** the overlay goes
+  into the store. The workspace list reads the stored objects, so a name
+  written afterwards would never show up.
+
 The app deliberately centers on Toronto (`MAP_CENTER = {lat:43.6532,
 lng:-79.3832}`) and defaults geocoder lookups to "Ontario, Canada" —
 a Canadian-centric app.

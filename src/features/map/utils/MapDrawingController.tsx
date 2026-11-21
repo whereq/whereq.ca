@@ -42,6 +42,9 @@ import {
   type MapDrawingSession,
 } from "@/features/map/utils/mapHandlers";
 import { makeDefaultMarkderContent } from "@/features/map/utils/mapUtils";
+import type { ShapeToImport } from "@/features/map/utils/geoJson";
+import { eventEmitter } from "@/utils/eventEmitter";
+import { EVENT } from "@/utils/constants";
 
 /**
  * A double click also fires two `click` events. Clicks that arrive within
@@ -99,6 +102,24 @@ type PreviewShape =
 const isSamePoint = (a: google.maps.LatLng, b: google.maps.LatLng) =>
   Math.abs(a.lat() - b.lat()) < SAME_POINT_EPSILON &&
   Math.abs(a.lng() - b.lng()) < SAME_POINT_EPSILON;
+
+/**
+ * Give a freshly drawn overlay its name and description.
+ *
+ * The name has to be set *before* the overlay goes into the store: the
+ * workspace list reads the stored objects, so a name written afterwards
+ * would never show up.
+ */
+const applyDetails = (
+  overlay: MapOverlay,
+  details?: { title?: string; description?: string }
+): void => {
+  if (!details) {
+    return;
+  }
+  overlay.title = details.title ?? "";
+  overlay.description = details.description ?? "";
+};
 
 /** The shapes this controller knows how to draw. */
 const DRAWABLE_SHAPES: MapShapeType[] = [
@@ -210,13 +231,24 @@ const MapDrawingController: React.FC = () => {
   );
 
   const completePath = useCallback(
-    (points: google.maps.LatLng[], shapeType: MapShapeType.Polyline | MapShapeType.Polygon) => {
+    (
+      points: google.maps.LatLng[],
+      shapeType: MapShapeType.Polyline | MapShapeType.Polygon,
+      /** The name and the description the shape should carry. */
+      details?: { title?: string; description?: string }
+    ): MapOverlay | null => {
       if (points.length < MIN_PATH_POINTS) {
-        return;
+        return null;
       }
 
       if (shapeType === MapShapeType.Polygon) {
-        const closed = [...points, points[0]];
+        // A ring that already ends where it starts (a shape that came from a
+        // file) must not be closed a second time: that would leave a duplicate
+        // vertex on the editable polygon.
+        const first = points[0];
+        const last = points[points.length - 1];
+        const alreadyClosed = first.lat() === last.lat() && first.lng() === last.lng();
+        const closed = alreadyClosed ? [...points] : [...points, first];
         const polygon = new google.maps.Polygon({
           paths: closed,
           strokeColor: MAP_DRAWING_COLOR.DEFAULT_STROKE_COLOR,
@@ -229,8 +261,9 @@ const MapDrawingController: React.FC = () => {
           zIndex: 9999,
         });
         const overlay = handlePolygonComplete(polygon, sessionRef);
+        applyDetails(overlay, details);
         commitShape(overlay, polygon);
-        return;
+        return overlay;
       }
 
       const polyline = new google.maps.Polyline({
@@ -244,7 +277,9 @@ const MapDrawingController: React.FC = () => {
         zIndex: 9999,
       });
       const overlay = handlePolylineComplete(polyline);
+      applyDetails(overlay, details);
       commitShape(overlay, polyline);
+      return overlay;
     },
     [map, commitShape]
   );
@@ -515,6 +550,68 @@ const MapDrawingController: React.FC = () => {
       resetDraft();
     };
   }, [map, mapShapeType, handleMapClick, handleMapDoubleClick, handleMapMouseMove, resetDraft, reportFailure]);
+
+  /**
+   * Draw shapes that were read from a JSON file.
+   *
+   * The tool bar lives outside the <Map> subtree, so it cannot reach the
+   * live map instance; it sends the shapes over the event bus instead and
+   * this controller — which owns the map — draws them with exactly the same
+   * code path a hand-drawn shape goes through.
+   *
+   * The answer travels back the same way: the tool bar says "added N
+   * shapes" only after this controller reports how many it really drew, so
+   * a map that is not ready cannot be mistaken for a successful import.
+   */
+  useEffect(() => {
+    const handleImportShapes = ({ shapes }: { shapes: ShapeToImport[] }) => {
+      if (!map || shapes.length === 0) {
+        eventEmitter.emit<{ drawn: number }>(EVENT.MAP_IMPORT_SHAPES_DONE, { drawn: 0 });
+        return;
+      }
+
+      let drawn = 0;
+
+      try {
+        const bounds = new google.maps.LatLngBounds();
+
+        shapes.forEach((shape) => {
+          const points = shape.coordinates.map(
+            (coordinate) => new google.maps.LatLng(coordinate.lat, coordinate.lng)
+          );
+          const shapeType =
+            shape.type === MapShapeType.Polygon
+              ? MapShapeType.Polygon
+              : MapShapeType.Polyline;
+          // The name and the description travel with the shape.
+          const overlay = completePath(points, shapeType, {
+            title: shape.title,
+            description: shape.description,
+          });
+
+          if (overlay) {
+            drawn += 1;
+          }
+
+          points.forEach((point) => bounds.extend(point));
+        });
+
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds);
+        }
+      } catch (error) {
+        reportFailure(error);
+      } finally {
+        eventEmitter.emit<{ drawn: number }>(EVENT.MAP_IMPORT_SHAPES_DONE, { drawn });
+      }
+    };
+
+    eventEmitter.on<{ shapes: ShapeToImport[] }>(EVENT.MAP_IMPORT_SHAPES, handleImportShapes);
+
+    return () => {
+      eventEmitter.off<{ shapes: ShapeToImport[] }>(EVENT.MAP_IMPORT_SHAPES, handleImportShapes);
+    };
+  }, [map, completePath, reportFailure]);
 
   return null;
 };
