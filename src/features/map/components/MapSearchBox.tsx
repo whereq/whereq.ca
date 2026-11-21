@@ -8,6 +8,12 @@
  * customers on March 1, 2025 and no longer renders its list, so the
  * predictions are fetched through the modern API (`useMapSearch`) and drawn
  * here — which also keeps the panel in the MetroUI dark palette.
+ *
+ * The shape of the box follows whereq.com's sidebar search: one bordered
+ * field with a leading magnifier, a clear (×) on the right and the
+ * suggestion list as a single dropdown attached to the field. The magnifier
+ * is the submit control — free text is geocoded — so there is no separate
+ * "Search" button sitting next to the field.
  */
 import React, { useEffect, useRef } from "react";
 import { useMapSearch, type ResolvedMapPlace } from "@/features/map/hooks/useMapSearch";
@@ -16,7 +22,7 @@ interface MapSearchBoxProps {
     /** Called with the place the user picked from the suggestion list. */
     onSelectPlace: (place: ResolvedMapPlace) => void;
     /**
-     * Called when the user submits free text (Enter, or the Search button)
+     * Called when the user submits free text (Enter, or the magnifier)
      * without picking a suggestion. The host decides what to do with it —
      * the map feature geocodes it.
      */
@@ -26,20 +32,38 @@ interface MapSearchBoxProps {
     placeholder?: string;
     /** Extra classes for the input element. */
     inputClassName?: string;
+    /** Extra classes for the bordered field that wraps the input. */
+    boxClassName?: string;
     /** Extra classes for the wrapper element. */
     className?: string;
-    /** Show a Search button next to the input. */
-    showSearchButton?: boolean;
 }
+
+/** The magnifier that submits the search. */
+const SearchIcon: React.FC = () => (
+    <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+    </svg>
+);
 
 const MapSearchBox: React.FC<MapSearchBoxProps> = ({
     onSelectPlace,
     onSubmitText,
     inputId = "mapSearch",
-    placeholder = "Search Google Maps",
-    inputClassName = "w-64",
+    placeholder = "Search addresses & places",
+    inputClassName = "",
+    boxClassName = "w-72",
     className = "",
-    showSearchButton = false,
 }) => {
     const {
         query,
@@ -55,6 +79,7 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
     } = useMapSearch();
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
     const listId = `${inputId}-suggestions`;
 
     /** Pick a suggestion and hand the resolved place to the host. */
@@ -77,7 +102,17 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
             void pick(highlightedIndex);
             return;
         }
-        onSubmitText?.(query.trim());
+        const text = query.trim();
+        if (!text) {
+            return;
+        }
+        onSubmitText?.(text);
+    };
+
+    /** Empty the box: the hook closes the autocomplete session with it. */
+    const clear = () => {
+        setQuery("");
+        inputRef.current?.focus();
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -118,32 +153,50 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
 
     return (
         <div ref={wrapperRef} className={`relative ${className}`}>
-            <div className="flex items-center space-x-1">
+            {/* The field: magnifier, input, clear. One bordered control, the
+                way whereq.com's sidebar search reads. */}
+            <div
+                className={`flex items-center gap-2 rounded border border-gray-700 bg-gray-800
+                            px-2 py-1.5 transition-colors focus-within:border-orange-500/60 ${boxClassName}`}
+            >
+                <button
+                    type="button"
+                    onClick={submit}
+                    aria-label="Search"
+                    title="Search"
+                    className="shrink-0 text-gray-400 transition-colors hover:text-orange-500"
+                >
+                    <SearchIcon />
+                </button>
                 <input
                     id={inputId}
+                    ref={inputRef}
                     type="text"
                     role="combobox"
                     aria-expanded={isOpen}
                     aria-controls={listId}
                     aria-autocomplete="list"
+                    aria-label={placeholder}
                     aria-activedescendant={
                         isOpen && highlightedIndex >= 0 ? `${listId}-option-${highlightedIndex}` : undefined
                     }
                     placeholder={placeholder}
-                    className={`bg-gray-800 text-orange-500 text-sm p-1 focus:outline-none ${inputClassName}`}
-                    style={{ fontFamily: "Fira Code, monospace" }}
+                    className={`min-w-0 flex-1 bg-transparent text-left text-sm text-metro-text
+                                placeholder-gray-500 focus:outline-none ${inputClassName}`}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     onKeyDown={handleKeyDown}
                     autoComplete="off"
                 />
-                {showSearchButton && (
+                {query && (
                     <button
                         type="button"
-                        onClick={submit}
-                        className="bg-gray-700 p-1 text-sm hover:bg-gray-600"
+                        onClick={clear}
+                        aria-label="Clear search"
+                        title="Clear search"
+                        className="shrink-0 text-base leading-none text-gray-500 transition-colors hover:text-metro-text"
                     >
-                        Search
+                        &times;
                     </button>
                 )}
             </div>
@@ -152,7 +205,8 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
                 <ul
                     id={listId}
                     role="listbox"
-                    className="absolute left-0 top-full mt-1 z-50 w-64 max-h-64 overflow-y-auto rounded border border-orange-500/40 bg-gray-900 shadow-lg"
+                    className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto
+                                rounded border border-gray-700 bg-gray-900 shadow-xl"
                 >
                     {suggestions.map((suggestion, index) => (
                         <li
@@ -160,10 +214,10 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
                             id={`${listId}-option-${index}`}
                             role="option"
                             aria-selected={index === highlightedIndex}
-                            className={`cursor-pointer px-2 py-1 text-sm ${
+                            className={`cursor-pointer px-3 py-2 text-left ${
                                 index === highlightedIndex
-                                    ? "bg-gray-700 text-orange-300"
-                                    : "text-gray-300 hover:bg-gray-800"
+                                    ? "bg-gray-800"
+                                    : "hover:bg-gray-800/60"
                             }`}
                             onMouseEnter={() => setHighlightedIndex(index)}
                             onMouseDown={(event) => {
@@ -172,9 +226,17 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
                                 void pick(index);
                             }}
                         >
-                            <span className="block text-orange-400">{suggestion.main}</span>
+                            <span
+                                className={`block text-sm ${
+                                    index === highlightedIndex ? "text-orange-300" : "text-metro-text"
+                                }`}
+                            >
+                                {suggestion.main}
+                            </span>
                             {suggestion.secondary && (
-                                <span className="block text-xs text-gray-400">{suggestion.secondary}</span>
+                                <span className="block text-xs text-metro-text-muted">
+                                    {suggestion.secondary}
+                                </span>
                             )}
                         </li>
                     ))}
@@ -182,7 +244,10 @@ const MapSearchBox: React.FC<MapSearchBoxProps> = ({
             )}
 
             {loading && (
-                <div className="absolute left-0 top-full mt-1 z-40 rounded bg-gray-900 px-2 py-1 text-xs text-gray-400 shadow">
+                <div
+                    className="absolute left-0 right-0 top-full z-40 mt-1 rounded border border-gray-700
+                                bg-gray-900 px-3 py-2 text-xs text-metro-text-muted shadow"
+                >
                     Searching…
                 </div>
             )}
