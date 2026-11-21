@@ -109,7 +109,6 @@ const MapTools : React.FC = () => {
                         space-y-1 bg-gray-900 text-orange-500 p-1">
             <div className="flex items-center space-x-1">
                 <MapSearchBox
-                    showSearchButton
                     onSelectPlace={handlePlaceSelected}
                     onSubmitText={handleSearchText}
                 />
