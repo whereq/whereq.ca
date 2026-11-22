@@ -90,9 +90,14 @@
 
 /* ---------- main panel ---------- */
 .wq-react__main {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  /* The documentation column is a readable measure, not the whole page:
+     the demo and the example code need the room more than a wide column
+     of prose does. */
+  max-width: 38rem;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px 28px 48px;
 }
 
@@ -188,12 +193,26 @@
   white-space: nowrap;
 }
 
+/* The install command stays on one line, like the code samples. */
+.wq-react__install code {
+  white-space: nowrap;
+}
+
 /* ---------- primitive index ---------- */
 .wq-react__index {
   margin-top: 28px;
+}
+
+/* The cards sit in a panel of their own, so a longer list scrolls instead
+   of pushing the rest of the page down. The scrollbar is the library's
+   own — see `components/WhereqReact.tsx`. */
+/* The cards are a vertical list: the documentation column is a readable
+   measure, and a card that wide has room for its whole description. */
+.wq-react__index-grid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  grid-template-columns: 1fr;
+  padding-right: 6px;
 }
 
 .wq-react__primitive {
@@ -241,7 +260,10 @@
 }
 
 .wq-react__primitive-blurb {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   margin-top: 4px;
   font-size: 11.5px;
   line-height: 1.5;
@@ -346,8 +368,13 @@
   font-family: 'Fira Code', monospace;
   font-size: 11.5px;
   line-height: 1.7;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  /* The code never wraps. A wrapped snippet is a broken snippet: the
+     reader has to work out which part belongs to which line. A line that
+     is too long scrolls sideways instead. */
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+  overflow-x: auto;
   min-width: 0;
   max-width: 100%;
 }

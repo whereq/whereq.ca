@@ -97,6 +97,14 @@ export interface RestoredOverlay {
     /** The live object behind it, when there was one. */
     native?: NativeMapOverlay;
     /**
+     * The group the entry sat in, when it was inside one.
+     *
+     * A grouped shape is not in the drawing's own list — it is in the
+     * group's children — so the undo has to know which group to put it
+     * back into.
+     */
+    containerId?: string;
+    /**
      * True when the change took the live object off the map.
      *
      * A deletion does; grouping and ungrouping do not — the shapes stay on
