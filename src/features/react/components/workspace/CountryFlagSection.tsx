@@ -5,16 +5,15 @@ import { CodeBlock } from "@/features/react/components/workspace/CodeBlock";
 
 /**
  * The flags on show. `code` is the short form — the one you would put in
- * a table — and `name` the country it stands for. The two are shown
- * together, because the code is what you look up and the name is what
- * you read.
+ * a table — and `name` the country it stands for. The code is what the
+ * demo shows; the name is what a hover gives you.
  */
 const FLAGS = [
     { country: "ca", code: "CA", name: "Canada" },
     { country: "cn", code: "CN", name: "China" },
     { country: "us", code: "USA", name: "United States" },
     { country: "gb", code: "UK", name: "United Kingdom" },
-    { country: "jp", code: "JP", name: "Japan" },
+    { country: "ru", code: "RU", name: "Russia" },
     { country: "fr", code: "FR", name: "France" },
     { country: "de", code: "DE", name: "Germany" },
     { country: "eu", code: "EU", name: "Europe" },
@@ -32,6 +31,7 @@ export const CountryFlagSection = () => {
                     {FLAGS.map((flag) => (
                         <span
                             key={flag.country}
+                            title={flag.name}
                             style={{
                                 display: "inline-flex",
                                 flexDirection: "column",
@@ -44,7 +44,7 @@ export const CountryFlagSection = () => {
                             }}
                         >
                             <CountryFlag country={flag.country} size={28} shape="rounded" />
-                            {flag.code} - {flag.name}
+                            {flag.code}
                         </span>
                     ))}
                 </div>
