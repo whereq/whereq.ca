@@ -3,15 +3,21 @@ import { CountryFlag } from "@whereq/react";
 import { useReactStore } from "@/features/react/store/reactStore";
 import { CodeBlock } from "@/features/react/components/workspace/CodeBlock";
 
+/**
+ * The flags on show. `code` is the short form — the one you would put in
+ * a table — and `name` the country it stands for. The two are shown
+ * together, because the code is what you look up and the name is what
+ * you read.
+ */
 const FLAGS = [
-    { country: "ca", name: "Canada" },
-    { country: "cn", name: "China" },
-    { country: "us", name: "United States" },
-    { country: "gb", name: "United Kingdom" },
-    { country: "jp", name: "Japan" },
-    { country: "fr", name: "France" },
-    { country: "de", name: "Germany" },
-    { country: "eu", name: "Europe" },
+    { country: "ca", code: "CA", name: "Canada" },
+    { country: "cn", code: "CN", name: "China" },
+    { country: "us", code: "USA", name: "United States" },
+    { country: "gb", code: "UK", name: "United Kingdom" },
+    { country: "jp", code: "JP", name: "Japan" },
+    { country: "fr", code: "FR", name: "France" },
+    { country: "de", code: "DE", name: "Germany" },
+    { country: "eu", code: "EU", name: "Europe" },
 ];
 
 /** Child page 6 — country flags, drawn as inline SVG. */
@@ -38,7 +44,7 @@ export const CountryFlagSection = () => {
                             }}
                         >
                             <CountryFlag country={flag.country} size={28} shape="rounded" />
-                            {flag.name}
+                            {flag.code} - {flag.name}
                         </span>
                     ))}
                 </div>
