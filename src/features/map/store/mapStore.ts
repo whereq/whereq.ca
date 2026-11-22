@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Place } from "@/features/map/types/types";
-import { Map, MapOverlay, MapMarker, NativeMapOverlay, DeletedShapeRecord } from "@/features/map/types/types";
+import { Map, MapOverlay, MapMarker, NativeMapOverlay, UndoRecord } from "@/features/map/types/types";
 import { MapShapeType, MapToolMode, OverlayModalMode, SectionType } from "@/features/map/models/MapEnum";
 import LocalStorageHelper from "@/utils/localStorageHelper";
 import { LOCAL_STORAGE_KEYS } from "@/utils/constants";
@@ -219,16 +219,16 @@ export interface OverlayStore {
     clearNativeOverlayRegistry: () => void;
 
     /**
-     * The deletions that can still be undone, oldest first.
+     * The changes to the drawing that can still be undone, oldest first.
      *
-     * Each entry holds the shapes that were taken off the map *and* the
-     * live objects behind them, so undo puts the very same shapes back
-     * rather than redrawing them from the model.
+     * Each entry holds the model entries that went away and the live
+     * objects behind them, so the change can be taken back exactly as it
+     * was.
      */
-    undoStack: DeletedShapeRecord[];
-    pushUndoRecord: (record: DeletedShapeRecord) => void;
-    /** Take the most recent deletion off the stack and return it. */
-    popUndoRecord: () => DeletedShapeRecord | undefined;
+    undoStack: UndoRecord[];
+    pushUndoRecord: (record: UndoRecord) => void;
+    /** Take the most recent change off the stack and return it. */
+    popUndoRecord: () => UndoRecord | undefined;
     clearUndoStack: () => void;
 
     overlayArrayOnMap: (

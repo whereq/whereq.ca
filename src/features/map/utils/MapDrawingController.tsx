@@ -43,7 +43,7 @@ import {
 } from "@/features/map/utils/mapHandlers";
 import { makeDefaultMarkderContent } from "@/features/map/utils/mapUtils";
 import { captureAndDownloadMap } from "@/features/map/utils/mapCapture";
-import { restoreDeletedShapes } from "@/features/map/utils/mapShapeActions";
+import { undoLastChange, describeUndo } from "@/features/map/utils/mapShapeActions";
 import type { ShapeToImport } from "@/features/map/utils/geoJson";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { EVENT } from "@/utils/constants";
@@ -720,12 +720,12 @@ const MapDrawingController: React.FC = () => {
   }, []);
 
   /**
-   * Put the last deleted shapes back.
+   * Take the last change to the drawing back.
    *
    * The tool bar cannot reach the map, so it asks over the event bus and
-   * this controller — which owns the map — puts the shapes back on it. The
-   * shapes come back as the very same live objects they were, so a polygon
-   * returns with the vertices the visitor dragged.
+   * this controller — which owns the map — takes the change back. A
+   * deletion puts the live objects back on the map; a grouping and an
+   * ungrouping leave the map alone and only change the model.
    */
   useEffect(() => {
     const handleUndoRequest = () => {
@@ -742,28 +742,34 @@ const MapDrawingController: React.FC = () => {
         eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
           ok: false,
           restored: 0,
-          message: "The map is not ready yet, so the shapes could not be put back.",
+          message: "The map is not ready yet, so the change could not be taken back.",
         });
         return;
       }
 
       try {
-        const restored = restoreDeletedShapes(map);
+        const undone = undoLastChange(map);
+
+        if (!undone) {
+          eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
+            ok: false,
+            restored: 0,
+            message: "There is nothing to undo.",
+          });
+          return;
+        }
 
         eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
-          ok: restored > 0,
-          restored,
-          message:
-            restored > 0
-              ? `Put ${restored} shape${restored === 1 ? "" : "s"} back on the map.`
-              : "There was nothing to undo.",
+          ok: true,
+          restored: undone.count,
+          message: describeUndo(undone),
         });
       } catch (error) {
-        console.error("Could not put the deleted shapes back:", error);
+        console.error("Could not take the last change back:", error);
         eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
           ok: false,
           restored: 0,
-          message: "The shapes could not be put back.",
+          message: "The change could not be taken back.",
         });
       }
     };

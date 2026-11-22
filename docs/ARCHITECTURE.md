@@ -1710,15 +1710,15 @@ map by id.
 | Group | Put the selected shapes under one name |
 | Ungroup | Take a group apart again |
 | Delete | Take the selected shapes off the map, after asking |
-| Undo | Put the last deleted shapes back (Ctrl+Z does the same) |
+| Undo | Take the last change back — a deletion, a grouping or an ungrouping (Ctrl+Z does the same) |
 | Save | Save the drawing into "My Map" |
 | Camera | Save a picture of the map |
 | Export / Import | Write / read the shapes as a GeoJSON file |
 
 `utils/mapShapeActions.ts` holds the operations that change the
-drawing (`deleteSelectedOverlays`, `restoreDeletedShapes`,
-`groupSelectedOverlays`, `ungroupOverlays`). They all work on the
-**model** and take the live objects off the map through the registry.
+drawing (`deleteSelectedOverlays`, `groupSelectedOverlays`,
+`ungroupOverlays`, `undoLastChange`). They all work on the **model** and
+take the live objects off the map through the registry.
 
 - **Delete** asks first, in a `CustomModal` of type `warning`: "Delete the
   selected shapes?" — the visitor is told that the saved copies in "My Map"
@@ -1763,29 +1763,53 @@ The notices under the tool bar are shared: `toolNotice` in the overlay
 store, so the tool bar, the overlay modal and the drawing controller all
 report back to the same place.
 
-**A deleted shape can be put back.** The overlay store keeps a stack of
-`DeletedShapeRecord`s. A record holds, for every shape that was deleted,
-the model entry, **the index it used to sit at**, and the live Google Maps
-object behind it. The live object is kept rather than thrown away, and
-that is the point: a deleted shape is only taken *off* the map
+**The last change to the drawing can be taken back.** The overlay store
+keeps a stack of `UndoRecord`s. One record covers one change, and there
+are three kinds of change the tool bar can make:
+
+| The change | What it does to the map | What it does to the model |
+| --- | --- | --- |
+| `delete` | takes the shapes off the map | takes the entries out |
+| `group` | nothing — the shapes stay | puts the shapes into a group |
+| `ungroup` | nothing — the shapes stay | lets the shapes out of the group |
+
+A record holds, for every model entry the change took away, the entry
+itself, **the index it used to sit at**, and the live Google Maps object
+behind it. For a deletion the live object is kept rather than thrown away,
+and that is the point: a deleted shape is only taken *off* the map
 (`setMap(null)`), so the very same object can be put back — with the
 vertices the visitor dragged, and with the name it was given.
 
-`restoreDeletedShapes(map)` puts the shapes back in three places: the
-live objects go back on the map, the registry ties them to the model
-again, and the model entries go back **where they were**. The entries are
-put back from the earliest index upwards, so each one lands in the place
-it used to hold even when several of them come back at once — the drawing
-keeps its order, and the GeoJSON export keeps the same feature order it
-had before the deletion. The shapes come back **selected**, so the visitor
-sees what came back.
+`undoLastChange(map)` puts the drawing back the way it was, in three
+places:
+
+- the model entries go back **where they were**. The entries are put back
+  from the earliest index upwards, so each one lands in the place it used
+  to hold even when several of them come back at once — the drawing keeps
+  its order, and the GeoJSON export keeps the same feature order it had
+  before the change;
+- the model entries the change *added* come out again — undoing a grouping
+  takes the group out, undoing an ungroup takes the shapes that were let
+  out of it back into the group;
+- the live objects go back on the map, but **only the ones the change
+  actually took off it**. A grouping leaves the map alone, so undoing it
+  must not touch the shapes that are still drawn there.
+
+The shapes come back **selected**, so the visitor sees what came back. A
+group has no shape of its own on the map, so undoing an ungroup leaves the
+selection empty — there is nothing on the map to point at.
+
+Because the stack is chronological and each undo restores the model to
+the state before its own change, the recorded indices stay valid: walking
+the stack backwards reproduces the drawing exactly, change after change.
 
 The undo request travels over the event bus, like the capture and the
 import: `MapTools` emits `EVENT.MAP_UNDO_REQUEST`, and
-`MapDrawingController` — which is inside `<Map>` and owns the map — puts
-the shapes back and answers with `EVENT.MAP_UNDO_DONE`. The tool bar
-waits for that answer before it claims success, exactly as it does for
-the import and the capture.
+`MapDrawingController` — which is inside `<Map>` and owns the map — takes
+the change back and answers with `EVENT.MAP_UNDO_DONE`. The tool bar waits
+for that answer before it claims success, exactly as it does for the
+import and the capture, and the answer carries a message that says which
+change was taken back (`describeUndo`).
 
 Two rules keep the stack honest:
 

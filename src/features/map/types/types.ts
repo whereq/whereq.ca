@@ -73,33 +73,64 @@ export type NativeMapOverlay =
     | google.maps.Rectangle;
 
 /**
- * One shape that was deleted, and everything needed to put it back.
+ * What an undo record undoes.
+ *
+ * - `delete` — shapes were taken off the map;
+ * - `group` — shapes were put into a group;
+ * - `ungroup` — a group was taken apart.
+ */
+export type UndoAction = "delete" | "group" | "ungroup";
+
+/**
+ * One model entry that goes back where it used to be.
  *
  * The live object is kept, not thrown away: a deleted shape is only taken
  * off the map (`setMap(null)`), so the same object can be put back exactly
  * as it was — with the vertices the visitor dragged, and with the name it
  * was given.
  */
-export interface DeletedShape {
-    /** The model entry that was taken off the map. */
+export interface RestoredOverlay {
+    /** The model entry that goes back. */
     overlay: MapOverlay;
-    /** Where it sat in the drawing before it was deleted. */
+    /** Where it sat in the drawing before the change. */
     index: number;
     /** The live object behind it, when there was one. */
     native?: NativeMapOverlay;
+    /**
+     * True when the change took the live object off the map.
+     *
+     * A deletion does; grouping and ungrouping do not — the shapes stay on
+     * the map in both cases, only the model changes.
+     */
+    wasDetached?: boolean;
     /** True when the live object was in the native overlay list. */
-    wasInNativeList: boolean;
+    wasInNativeList?: boolean;
 }
 
 /**
- * A deletion that can be undone.
+ * A change to the drawing that can be undone.
  *
  * The overlay store keeps a stack of these, so the visitor can walk back
- * through the deletions one at a time.
+ * through the changes one at a time.
  */
-export interface DeletedShapeRecord {
-    /** The shapes that were deleted, in the order they were deleted. */
-    shapes: DeletedShape[];
+export interface UndoRecord {
+    /** What was done, so the notice can say it. */
+    action: UndoAction;
+    /**
+     * The model entries that go back, and where they came from.
+     *
+     * They are put back from the earliest index upwards, so each one lands
+     * in the place it used to hold even when several of them come back at
+     * once.
+     */
+    restored: RestoredOverlay[];
+    /**
+     * The ids of the model entries that have to go away again.
+     *
+     * Undoing a group takes the group out; undoing an ungroup takes the
+     * shapes that were let out of it back into the group.
+     */
+    removedIds: string[];
 }
 
 export interface MapMarker {
