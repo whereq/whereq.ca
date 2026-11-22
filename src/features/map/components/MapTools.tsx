@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faRuler,
     faHand,
@@ -25,11 +24,18 @@ import {
     saveSearchToLocalStorage,
 } from "@/features/map/utils/mapUtils";
 import MapSearchBox from "@/features/map/components/MapSearchBox";
+import ToolButton from "@/features/map/components/ToolButton";
 import type { ResolvedMapPlace } from "@/features/map/hooks/useMapSearch";
 import { overlaysToGeoJson, parseShapeDocument, GeoJsonError } from "@/features/map/utils/geoJson";
 import { downloadShapeDocument } from "@/features/map/utils/shapeTransfer";
+import {
+    deleteSelectedOverlays,
+    hasGroupToUngroup,
+    ungroupOverlays,
+} from "@/features/map/utils/mapShapeActions";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { EVENT } from "@/utils/constants";
+import CustomModal from "@/components/modals/CustomModal";
 
 /**
  * How long the tool bar waits for the drawing controller to report back
@@ -38,26 +44,38 @@ import { EVENT } from "@/utils/constants";
  */
 const IMPORT_ANSWER_TIMEOUT_MS = 3000;
 
+/**
+ * How long the tool bar waits for the map's picture. The map answers as
+ * soon as it has one, so this only ever fires when the map is not there.
+ */
+const CAPTURE_ANSWER_TIMEOUT_MS = 8000;
+
+/** The id of the ruler tool in the tool bar's active-tool state. */
+const RULER_TOOL = "ruler";
+
 
 const MapTools : React.FC = () => {
     /** Short notice under the toolbar (e.g. "no match found"). */
     const [searchNotice, setSearchNotice] = useState<string | null>(null);
-    /** Notice about the last import or export. */
-    const [transferNotice, setTransferNotice] = useState<string | null>(null);
     /** The hidden file picker the import button opens. */
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    /** True while the "delete this shape?" question is on screen. */
+    const [isDeleteQuestionOpen, setIsDeleteQuestionOpen] = useState(false);
 
     const { placeMapOverlay, setPlaceMapOverlay } = usePlaceStore();
     const { mapToolMode, setMapToolMode } = useMapToolStore();
-    const { 
-        activeTool, 
-        setActiveTool, 
+    const {
+        activeTool,
+        setActiveTool,
         setMapShapeType,
-        setOverlayModalMode, 
-        saveButtonInMapToolEnabled, 
+        setOverlayModalMode,
+        saveButtonInMapToolEnabled,
         addToMapOverlayArrayOnMap,
         setClickedOverlay,
         drawingUnavailable,
+        selectedOverlayArray,
+        toolNotice,
+        setToolNotice,
     } = useOverlayStore();
 
     /**
@@ -88,7 +106,7 @@ const MapTools : React.FC = () => {
     useEffect(() => {
         if (placeMapOverlay) {
             addToMapOverlayArrayOnMap(placeMapOverlay);
-        } 
+        }
     }, [placeMapOverlay, addToMapOverlayArrayOnMap]);
 
     /**
@@ -102,15 +120,15 @@ const MapTools : React.FC = () => {
         const shapeDocument = overlaysToGeoJson(mapOverlayArrayOnMap);
 
         if (shapeDocument.features.length === 0) {
-            setTransferNotice("There is nothing to export yet - draw a polygon or a polyline first.");
+            setToolNotice("There is nothing to export yet - draw a polygon or a polyline first.");
             return;
         }
 
         downloadShapeDocument(shapeDocument);
-        setTransferNotice(
+        setToolNotice(
             `Exported ${shapeDocument.features.length} shape${shapeDocument.features.length === 1 ? "" : "s"}.`
         );
-    }, []);
+    }, [setToolNotice]);
 
     /**
      * Read a JSON file and draw the polygons and polylines it holds.
@@ -126,7 +144,7 @@ const MapTools : React.FC = () => {
         const file = event.target.files?.[0];
         // Clear the input, so the same file can be chosen again later.
         event.target.value = "";
-        setTransferNotice(null);
+        setToolNotice(null);
 
         if (!file) {
             return;
@@ -137,7 +155,7 @@ const MapTools : React.FC = () => {
             const { shapes, skipped } = parseShapeDocument(text);
 
             if (shapes.length === 0) {
-                setTransferNotice("That file has no polygons or polylines in it.");
+                setToolNotice("That file has no polygons or polylines in it.");
                 return;
             }
 
@@ -174,36 +192,99 @@ const MapTools : React.FC = () => {
             });
 
             if (drawn < 0) {
-                setTransferNotice("The map did not answer - try again in a moment.");
+                setToolNotice("The map did not answer - try again in a moment.");
                 return;
             }
 
             if (drawn === 0) {
-                setTransferNotice("The map is not ready yet, so the shapes were not drawn.");
+                setToolNotice("The map is not ready yet, so the shapes were not drawn.");
                 return;
             }
 
-            setTransferNotice(
+            setToolNotice(
                 `Added ${drawn} shape${drawn === 1 ? "" : "s"} to the map${suffix}`
             );
         } catch (error) {
-            setTransferNotice(
+            setToolNotice(
                 error instanceof GeoJsonError
                     ? error.message
                     : "That file could not be read."
             );
         }
-    }, []);
+    }, [setToolNotice]);
 
-    const handleToolClick = (tool: string) => {
-        setActiveTool((prev) => (prev === tool ? null : tool));
-    };
+    /**
+     * Ask for the map's picture.
+     *
+     * The tool bar cannot reach the map either, so the request goes over
+     * the event bus and the drawing controller — which owns the map —
+     * takes the picture and answers with the result.
+     */
+    const handleCaptureMap = useCallback(() => {
+        setToolNotice("Taking the picture…");
 
-    useEffect(() => {
-        if (mapToolMode === MapToolMode.Hand) {
+        const onCaptured = ({ message }: { ok: boolean; message: string }) => {
+            window.clearTimeout(timeout);
+            eventEmitter.off<{ ok: boolean; message: string }>(
+                EVENT.MAP_CAPTURE_DONE,
+                onCaptured
+            );
+            setToolNotice(message);
+        };
+
+        let timeout = 0;
+
+        eventEmitter.on<{ ok: boolean; message: string }>(
+            EVENT.MAP_CAPTURE_DONE,
+            onCaptured
+        );
+
+        timeout = window.setTimeout(() => {
+            eventEmitter.off<{ ok: boolean; message: string }>(
+                EVENT.MAP_CAPTURE_DONE,
+                onCaptured
+            );
+            setToolNotice((current) =>
+                current === "Taking the picture…" ? "The map did not answer - try again in a moment." : current
+            );
+        }, CAPTURE_ANSWER_TIMEOUT_MS);
+
+        eventEmitter.emit(EVENT.MAP_CAPTURE_REQUEST);
+    }, [setToolNotice]);
+
+    /** Group the selected shapes under one name. */
+    const handleGroup = useCallback(() => {
+        if (selectedOverlayArray.length < 2) {
+            setToolNotice("Select two or more shapes to group them - hold shift to pick more than one.");
+            return;
+        }
+        setOverlayModalMode(OverlayModalMode.Group);
+    }, [selectedOverlayArray.length, setOverlayModalMode, setToolNotice]);
+
+    /** Take a group apart again. */
+    const handleUngroup = useCallback(() => {
+        const released = ungroupOverlays();
+        setToolNotice(
+            released > 0
+                ? `Let ${released} shape${released === 1 ? "" : "s"} out of the group.`
+                : "There is no group to take apart."
+        );
+    }, [setToolNotice]);
+
+    /** Delete the selected shapes, after asking. */
+    const handleConfirmDelete = useCallback(() => {
+        const deleted = deleteSelectedOverlays();
+        setToolNotice(
+            deleted > 0
+                ? `Deleted ${deleted} shape${deleted === 1 ? "" : "s"}.`
+                : "There was nothing to delete."
+        );
+    }, [setToolNotice]);
+
+    useEffect(() => {        if (mapToolMode === MapToolMode.Hand) {
             setActiveTool(null);
             setMapShapeType(null);
-        } 
+        }
     }, [mapToolMode, setActiveTool, setMapShapeType]);
 
     const handleDrawingOptionClick = (option: MapOverlayType) => {
@@ -212,11 +293,25 @@ const MapTools : React.FC = () => {
         setMapShapeType(mapOverlayToShape(option)); // Update mapShapeType in the store
     };
 
+    /** The ruler measures between two points; it draws no shape. */
+    const handleRulerClick = () => {
+        const next = activeTool === RULER_TOOL ? null : RULER_TOOL;
+        setActiveTool(next);
+        setMapShapeType(null);
+        setMapToolMode(MapToolMode.Draw);
+        setToolNotice(
+            next
+                ? "Click two points on the map to measure the distance between them."
+                : null
+        );
+    };
+
     const handleMapToolMode = (action: MapToolMode) => {
         if (action === MapToolMode.Hand) {
             setMapToolMode(action);
             setActiveTool(null); // Deselect any selected option
             setMapShapeType(null); // Reset mapShapeType
+            setToolNotice(null);
         } else {
             // Do nothing if the action is not Hand
         }
@@ -237,109 +332,74 @@ const MapTools : React.FC = () => {
                     onSubmitText={handleSearchText}
                 />
             </div>
-            <div className="flex space-x-1 text-sm bg-gray-800 p-1">
-                <button
-                    className={`p-1 ${mapToolMode === MapToolMode.Hand ? "bg-orange-500 text-white" : "bg-gray-700"
-                        } hover:bg-gray-600`}
+            <div className="flex flex-wrap items-center gap-y-1 space-x-1 text-sm bg-gray-800 p-1">
+                <ToolButton
+                    icon={faHand}
+                    label="Pan the map"
                     onClick={() => handleMapToolMode(MapToolMode.Hand)}
-                >
-                    <FontAwesomeIcon icon={faHand} title="Hand Mode" />
-                </button>
+                    active={mapToolMode === MapToolMode.Hand}
+                />
                 {[
-                    { option: MapOverlayType.Marker, icon: faLocationDot, label: "Marker" },
-                    { option: MapOverlayType.Polyline, icon: faBezierCurve, label: "Polyline" },
-                    { option: MapOverlayType.Polygon, icon: faDrawPolygon, label: "Polygon" },
-                    { option: MapOverlayType.Circle, icon: faCircle, label: "Circle" },
-                    { option: MapOverlayType.Rectangle, icon: faSquare, label: "Rectangle" },
+                    { option: MapOverlayType.Marker, icon: faLocationDot, label: "Drop a marker" },
+                    { option: MapOverlayType.Polyline, icon: faBezierCurve, label: "Draw a polyline" },
+                    { option: MapOverlayType.Polygon, icon: faDrawPolygon, label: "Draw a polygon" },
+                    { option: MapOverlayType.Circle, icon: faCircle, label: "Draw a circle" },
+                    { option: MapOverlayType.Rectangle, icon: faSquare, label: "Draw a rectangle" },
                 ].map(({ option, icon, label }) => (
-                    <button
+                    <ToolButton
                         key={option}
+                        icon={icon}
+                        label={label}
                         disabled={drawingUnavailable}
-                        className={`p-1 rounded ${activeTool === option ? "bg-orange-500 text-white" : "bg-gray-700"
-                            } ${drawingUnavailable ? "cursor-not-allowed opacity-50" : "hover:bg-gray-600"}`}
+                        active={activeTool === option}
                         onClick={() => handleDrawingOptionClick(option)}
-                    >
-                        <FontAwesomeIcon icon={icon} title={label} />
-                    </button>
+                    />
                 ))}
-                {[
-                    { tool: "ruler", icon: faRuler },
-                ].map(({ tool, icon }) => (
-                    <button
-                        disabled={true}
-                        key={tool}
-                        className={`p-1 bg-gray-500 cursor-not-allowed opacity-50`}
-                        onClick={() => handleToolClick(tool)}
-                    >
-                        <FontAwesomeIcon icon={icon} />
-                    </button>))
-                }
-                <button
-                    disabled={!saveButtonInMapToolEnabled}
-                    className={`p-1 ${saveButtonInMapToolEnabled?
-                        "bg-gray-700 hover:bg-gray-600" :
-                        "bg-gray-500 cursor-not-allowed opacity-50"
-                        }`}
-                    onClick={() => {
-                        setOverlayModalMode(OverlayModalMode.Group)
-                    }}
-                >
-                    <FontAwesomeIcon icon={faObjectGroup} title="Group" />
-                </button>
-                <button
-                    disabled={!saveButtonInMapToolEnabled}
-                    className={`p-1 ${saveButtonInMapToolEnabled?
-                        "bg-gray-700 hover:bg-gray-600" :
-                        "bg-gray-500 cursor-not-allowed opacity-50"
-                        }`}
-                    onClick={() => setOverlayModalMode(OverlayModalMode.Ungroup)}
-                >
-                    <FontAwesomeIcon icon={faObjectUngroup} title="Ungroup" />
-                </button>
-                <button
-                    disabled={!saveButtonInMapToolEnabled}
-                    className={`p-1 ${saveButtonInMapToolEnabled?
-                            "bg-gray-700 hover:bg-gray-600" :
-                            "bg-gray-500 cursor-not-allowed opacity-50"
-                        }`}
+                <ToolButton
+                    icon={faRuler}
+                    label="Measure a distance"
+                    onClick={handleRulerClick}
+                    active={activeTool === RULER_TOOL}
+                />
+                <ToolButton
+                    icon={faObjectGroup}
+                    label="Group the selected shapes"
+                    onClick={handleGroup}
+                    disabled={selectedOverlayArray.length < 2}
+                />
+                <ToolButton
+                    icon={faObjectUngroup}
+                    label="Take a group apart"
+                    onClick={handleUngroup}
+                    disabled={!hasGroupToUngroup()}
+                />
+                <ToolButton
+                    icon={faRemove}
+                    label="Delete the selected shapes"
+                    onClick={() => setIsDeleteQuestionOpen(true)}
+                    disabled={selectedOverlayArray.length === 0}
+                />
+                <ToolButton
+                    icon={faSave}
+                    label="Save the drawing to My Map"
                     onClick={() => setOverlayModalMode(OverlayModalMode.Save)}
-                >
-                    <FontAwesomeIcon icon={faRemove} title="Delete" />
-                </button>
-                <button
                     disabled={!saveButtonInMapToolEnabled}
-                    className={`p-1 ${saveButtonInMapToolEnabled?
-                        "bg-gray-700 hover:bg-gray-600" :
-                        "bg-gray-500 cursor-not-allowed opacity-50"
-                        }`}
-                    onClick={() => setOverlayModalMode(OverlayModalMode.Save)}
-                >
-                    <FontAwesomeIcon icon={faSave} title="Save" />
-                </button>
-                <button
-                    disabled={!saveButtonInMapToolEnabled}
-                    className={`p-1 ${saveButtonInMapToolEnabled?
-                        "bg-gray-700 hover:bg-gray-600" :
-                        "bg-gray-500 cursor-not-allowed opacity-50"
-                        }`}
-                    onClick={() => setOverlayModalMode(OverlayModalMode.Save)}
-                >
-                    <FontAwesomeIcon icon={faCamera} title="Capture Map" />
-                </button>
-                <button
-                    className="p-1 bg-gray-700 hover:bg-gray-600"
+                />
+                <ToolButton
+                    icon={faCamera}
+                    label="Take a picture of the map"
+                    onClick={handleCaptureMap}
+                />
+                <ToolButton
+                    icon={faFileExport}
+                    label="Export the shapes as a JSON file"
                     onClick={handleExportShapes}
-                    title="Export the drawn polygons and polylines as a JSON file"
-                >
-                    <FontAwesomeIcon icon={faFileExport} title="Export shapes" />
-                </button>
-                <button
-                    className="p-1 bg-gray-700 hover:bg-gray-600"
+                />
+                <ToolButton
+                    icon={faFileImport}
+                    label="Draw the shapes held in a JSON file"
                     onClick={() => fileInputRef.current?.click()}
-                    title="Draw the polygons and polylines held in a JSON file"
-                >
-                    <FontAwesomeIcon icon={faFileImport} title="Import shapes" />
-                </button>
+                />
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -358,11 +418,35 @@ const MapTools : React.FC = () => {
                     {searchNotice}
                 </div>
             )}
-            {transferNotice && (
+            {toolNotice && (
                 <div className="bg-gray-900 text-orange-300 text-xs px-2 py-1 rounded shadow">
-                    {transferNotice}
+                    {toolNotice}
                 </div>
             )}
+
+            <CustomModal
+                isOpen={isDeleteQuestionOpen}
+                onRequestClose={() => setIsDeleteQuestionOpen(false)}
+                type="warning"
+                title="Delete the selected shapes?"
+                message={
+                    selectedOverlayArray.length === 1
+                        ? "This shape will be taken off the map. Saved copies in My Map are kept."
+                        : `These ${selectedOverlayArray.length} shapes will be taken off the map. Saved copies in My Map are kept.`
+                }
+                actions={[
+                    {
+                        label: "Cancel",
+                        onClick: () => setIsDeleteQuestionOpen(false),
+                        className: "bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 transition-colors duration-200",
+                    },
+                    {
+                        label: "Delete",
+                        onClick: handleConfirmDelete,
+                        className: "bg-red-500 hover:bg-red-600 text-white px-5 py-2 transition-colors duration-200",
+                    },
+                ]}
+            />
         </div>
     );
 };

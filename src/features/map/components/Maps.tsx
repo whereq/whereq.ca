@@ -10,6 +10,7 @@ import { MapToolMode, OverlayModalMode } from "@/features/map/models/MapEnum";
 import MarkerOverlayModal from "@/features/map/components/MarkerOverlayModal";
 import { useOverlayManager } from "@/features/map/hooks/useOverlayManager";
 import { useMapInitialization } from "@/features/map/hooks/useMapInitialization";
+import { useOverlaySelection } from "@/features/map/hooks/useOverlaySelection";
 import { handleLayerSwitch } from "@/features/map/utils/mapEventHandlers";
 import { calculateOverlayBounds } from "@/features/map/utils/mapUtils";
 import { readGoogleMapCredentials } from "@/features/map/utils/mapCredentials";
@@ -56,6 +57,10 @@ const MapInner: React.FC<{
     const { setModalInfo } = useModalStore();
 
     useMapInitialization();
+
+    // Clicking a shape on the map selects it, and the highlight follows
+    // the selection.
+    useOverlaySelection();
 
     useHandleSelectedPlace(mapRef);
     useHandleOverlayToggling(mapRef, drawOverlays, clearOverlayArrayOnMap, clearMapOverlayArrayOnMap);

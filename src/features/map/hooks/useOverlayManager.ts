@@ -1,15 +1,35 @@
 import { useCallback } from "react";
 import { MapOverlay } from "@/features/map/types/types";
-import { calculateMapOverlayBounds, highlightShape } from "@/features/map/utils/mapUtils";
+import { calculateMapOverlayBounds } from "@/features/map/utils/mapUtils";
 import { MapOverlayType } from "@/features/map/models/MapEnum";
 import { MAP_DRAWING_COLOR } from "@/features/map/utils/constants";
 import { useOverlayStore } from "@/features/map/store/mapStore";
 import { eventEmitter } from "@/utils/eventEmitter";
+import { EVENT } from "@/utils/constants";
 import { updateMarkerIcon } from "@/features/map/utils/mapHandlers";
 import logUtil from "@/utils/logUtil";
 
+/**
+ * Announce that a shape on the map was selected.
+ *
+ * A plain click selects the shape and nothing else; a shift-click adds it
+ * to the selection or takes it out again. That is what makes "group these
+ * two shapes" possible.
+ */
+const announceSelection = (overlayId: string, event: google.maps.MapMouseEvent) => {
+    eventEmitter.emit(EVENT.MAP_OVERLAY_SELECTED, {
+        overlayId,
+        additive: Boolean((event.domEvent as MouseEvent | undefined)?.shiftKey),
+    });
+};
+
 export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null>) => {
-    const { addToOverlayArrayOnMap, clearOverlayArrayOnMap, clearMapOverlayArrayOnMap } = useOverlayStore();
+    const {
+        addToOverlayArrayOnMap,
+        clearOverlayArrayOnMap,
+        clearMapOverlayArrayOnMap,
+        registerNativeOverlay,
+    } = useOverlayStore();
 
     const drawOverlays = useCallback((overlays: MapOverlay[]) => {
         if (!mapRef.current) {
@@ -46,6 +66,7 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                         updateMarkerIcon(advancedMarker, overlay.icon);
                     }
                     addToOverlayArrayOnMap(advancedMarker);
+                    registerNativeOverlay(overlay.id, advancedMarker);
                     break;
                 }
                 case MapOverlayType.Polygon: {
@@ -60,12 +81,9 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                         zIndex: 9999,
                     });
 
-                    let isHighlighted = false;
                     polygon.addListener("click", (event: google.maps.MapMouseEvent) => {
                         event.stop();
-                        isHighlighted = !isHighlighted;
-                        highlightShape(polygon, isHighlighted);
-                        eventEmitter.emit("polygon-clicked", { polygon, isHighlighted });
+                        announceSelection(overlay.id, event);
                     });
 
                     polygon.addListener("dblclick", (event: google.maps.MapMouseEvent) => {
@@ -92,6 +110,7 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                     });
 
                     addToOverlayArrayOnMap(polygon);
+                    registerNativeOverlay(overlay.id, polygon);
                     break;
                 }
 
@@ -106,11 +125,13 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                         zIndex: 9999,
                     });
 
-                    polyline.addListener("click", () => {
-                        // Handle polyline click
+                    polyline.addListener("click", (event: google.maps.MapMouseEvent) => {
+                        event.stop();
+                        announceSelection(overlay.id, event);
                     });
 
                     addToOverlayArrayOnMap(polyline);
+                    registerNativeOverlay(overlay.id, polyline);
                     break;
                 }
 
@@ -128,11 +149,13 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                             zIndex: 9999,
                         });
 
-                        circle.addListener("click", () => {
-                            // Handle circle click
+                        circle.addListener("click", (event: google.maps.MapMouseEvent) => {
+                            event.stop();
+                            announceSelection(overlay.id, event);
                         });
 
                         addToOverlayArrayOnMap(circle);
+                        registerNativeOverlay(overlay.id, circle);
                     } else {
                         console.error("Circle overlay requires exactly one coordinate and a radius.");
                     }
@@ -154,11 +177,13 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                             zIndex: 9999,
                         });
 
-                        rectangle.addListener("click", () => {
-                            // Handle rectangle click
+                        rectangle.addListener("click", (event: google.maps.MapMouseEvent) => {
+                            event.stop();
+                            announceSelection(overlay.id, event);
                         });
 
                         addToOverlayArrayOnMap(rectangle);
+                        registerNativeOverlay(overlay.id, rectangle);
                     } else {
                         console.error("Rectangle overlay requires exactly two coordinates.");
                     }
@@ -198,7 +223,13 @@ export const useOverlayManager = (mapRef: React.RefObject<google.maps.Map | null
                 mapRef.current.setZoom(15); // Set a reasonable zoom level for a single Marker
             }
         }
-    }, [mapRef, addToOverlayArrayOnMap, clearOverlayArrayOnMap, clearMapOverlayArrayOnMap]);
+    }, [
+        mapRef,
+        addToOverlayArrayOnMap,
+        clearOverlayArrayOnMap,
+        clearMapOverlayArrayOnMap,
+        registerNativeOverlay,
+    ]);
 
     return { drawOverlays };
 };

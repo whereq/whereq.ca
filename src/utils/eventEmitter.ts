@@ -15,7 +15,7 @@ class EventEmitter {
     this.events[event] = this.events[event].filter(l => l !== listener);
   }
 
-  emit<T>(event: string, data: T) {
+  emit<T>(event: string, data?: T) {
     if (!this.events[event]) return;
     this.events[event].forEach(listener => listener(data));
   }

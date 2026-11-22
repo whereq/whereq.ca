@@ -1,8 +1,8 @@
 import { attachListenersToEditablePolygon } from "@/features/map/utils/mapListeners";
 import { v4 as uuidv4 } from 'uuid';
-import { highlightShape, highlightMarker, 
-         createMarkerWithText, 
-                saveSearchToLocalStorage, 
+import { highlightMarker,
+         createMarkerWithText,
+                saveSearchToLocalStorage,
          makeDefaultMarkderContent,
          createMapOverlayFromGeocoderResult,
          getLatLngFromPosition,
@@ -12,6 +12,7 @@ import { MapOverlayType } from "@/features/map/models/MapEnum";
 import { DEFAULT_PROVINCE, MAP_DRAWING_COLOR, MAP_EVENT } from "@/features/map/utils/constants";
 import { MarkerIconType } from "@/features/map/models/MapEnum";
 import { eventEmitter } from "@/utils/eventEmitter";
+import { EVENT } from "@/utils/constants";
 import logUtil from "@/utils/logUtil";
 
 /**
@@ -27,6 +28,32 @@ export interface MapDrawingSession {
   /** Suspend (false) or resume (true) collecting new vertices. */
   setDrawingEnabled: (enabled: boolean) => void;
 }
+
+/**
+ * True when the click that selected a shape was a shift-click.
+ *
+ * A plain click selects one shape and replaces the selection; a
+ * shift-click adds the shape to the selection (or takes it out again).
+ * That is what makes "group these two shapes" possible.
+ */
+const isAdditiveClick = (event: google.maps.MapMouseEvent): boolean =>
+  Boolean((event.domEvent as MouseEvent | undefined)?.shiftKey);
+
+/**
+ * Announce that a shape on the map was selected.
+ *
+ * The shape's id travels with the event, so the listener can find the
+ * model behind the native overlay.
+ */
+const announceSelection = (
+  overlayId: string,
+  event: google.maps.MapMouseEvent
+) => {
+  eventEmitter.emit(EVENT.MAP_OVERLAY_SELECTED, {
+    overlayId,
+    additive: isAdditiveClick(event),
+  });
+};
 
 /**
  * Free-text search: geocode what the user typed.
@@ -105,13 +132,21 @@ export const handlePolygonComplete = (
 
   attachListenersToEditablePolygon(polygon);
 
-  let isHighlighted = false;
+  const paths = polygon.getPath().getArray().map(latLng => ({ lat: latLng.lat(), lng: latLng.lng() }));
+
+  // The overlay is built before the listeners are attached: the click
+  // handler has to know which shape it belongs to.
+  const overlay: MapOverlay = {
+    id: uuidv4(),
+    type: MapOverlayType.Polygon,
+    title: "",
+    description: "",
+    coordinates: paths,
+  };
 
   polygon.addListener(MAP_EVENT.CLICK, (event: google.maps.MapMouseEvent) => {
     event.stop();
-    isHighlighted = !isHighlighted;
-    highlightShape(polygon, isHighlighted);
-    eventEmitter.emit("polygon-clicked", { polygon, isHighlighted });
+    announceSelection(overlay.id, event);
   });
 
   polygon.addListener("dblclick", (event: google.maps.MapMouseEvent) => {
@@ -139,14 +174,7 @@ export const handlePolygonComplete = (
     drawingSessionRef.current?.setDrawingEnabled(true); // Resume drawing
   });
 
-  const paths = polygon.getPath().getArray().map(latLng => ({ lat: latLng.lat(), lng: latLng.lng() }));
-  return {
-    id: uuidv4(),
-    type: MapOverlayType.Polygon,
-    title: "",
-    description: "",
-    coordinates: paths,
-  };
+  return overlay;
 };
 
 export const handlePolylineComplete = (
@@ -160,13 +188,23 @@ export const handlePolylineComplete = (
   });
 
   const path = polyline.getPath().getArray().map(latLng => ({ lat: latLng.lat(), lng: latLng.lng() }));
-  return {
+
+  const overlay: MapOverlay = {
     id: uuidv4(),
     type: MapOverlayType.Polyline,
     title: "",
     description: "",
     coordinates: path,
   };
+
+  // A polyline used to have no click handler at all, so it could not be
+  // picked on the map like the other shapes.
+  polyline.addListener(MAP_EVENT.CLICK, (event: google.maps.MapMouseEvent) => {
+    event.stop();
+    announceSelection(overlay.id, event);
+  });
+
+  return overlay;
 };
 
 export const handleCircleComplete = (
@@ -183,13 +221,23 @@ export const handleCircleComplete = (
     zIndex: 9999,
   });
 
-  let isHighlighted = false;
+  const center = circle.getCenter();
+  if (!center) {
+    throw new Error("Circle center is null or undefined");
+  }
+
+  const overlay: MapOverlay = {
+    id: uuidv4(),
+    type: MapOverlayType.Circle,
+    title: "",
+    description: "",
+    coordinates: [{ lat: center.lat(), lng: center.lng() }],
+    radius: circle.getRadius(), // Include the radius for circles
+  };
 
   circle.addListener(MAP_EVENT.CLICK, (event: google.maps.MapMouseEvent) => {
     event.stop();
-    isHighlighted = !isHighlighted;
-    highlightShape(circle, isHighlighted);
-    eventEmitter.emit("circle-clicked", { circle, isHighlighted });
+    announceSelection(overlay.id, event);
   });
 
   circle.addListener("dblclick", (event: google.maps.MapMouseEvent) => {
@@ -211,18 +259,7 @@ export const handleCircleComplete = (
     drawingSessionRef.current?.setDrawingEnabled(true); // Resume drawing
   });
 
-  const center = circle.getCenter();
-  if (!center) {
-    throw new Error("Circle center is null or undefined");
-  }
-  return {
-    id: uuidv4(),
-    type: MapOverlayType.Circle,
-    title: "",
-    description: "",
-    coordinates: [{ lat: center.lat(), lng: center.lng() }],
-    radius: circle.getRadius(), // Include the radius for circles
-  };
+  return overlay;
 };
 
 export const handleRectangleComplete = (
@@ -239,13 +276,9 @@ export const handleRectangleComplete = (
     zIndex: 9999,
   });
 
-  let isHighlighted = false;
-
   rectangle.addListener(MAP_EVENT.CLICK, (event: google.maps.MapMouseEvent) => {
     event.stop();
-    isHighlighted = !isHighlighted;
-    highlightShape(rectangle, isHighlighted);
-    eventEmitter.emit("rectangle-clicked", { rectangle, isHighlighted });
+    announceSelection(overlay.id, event);
   });
 
   rectangle.addListener("dblclick", (event: google.maps.MapMouseEvent) => {
@@ -273,7 +306,8 @@ export const handleRectangleComplete = (
   }
   const northeast = bounds.getNorthEast();
   const southwest = bounds.getSouthWest();
-  return {
+
+  const overlay: MapOverlay = {
     id: uuidv4(),
     type: MapOverlayType.Rectangle,
     title: "",
@@ -283,6 +317,8 @@ export const handleRectangleComplete = (
       { lat: southwest.lat(), lng: southwest.lng() }, // Southwest corner
     ],
   };
+
+  return overlay;
 };
 
 export const updateMarkerIcon = (

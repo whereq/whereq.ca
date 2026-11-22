@@ -185,6 +185,20 @@ const isValidPosition = (value: unknown): value is number[] => {
 };
 
 /**
+ * The shapes inside a group, one level at a time.
+ *
+ * A group is a container in the app's own model — it holds `children`
+ * instead of coordinates — so it has to be taken apart before the shapes
+ * in it can be written. Groups can hold groups, hence the recursion.
+ */
+const flattenOverlays = (overlays: MapOverlay[]): MapOverlay[] =>
+    overlays.flatMap((overlay) =>
+        overlay.isParent && overlay.children?.length
+            ? flattenOverlays(overlay.children)
+            : [overlay]
+    );
+
+/**
  * Turn the map's overlays into a GeoJSON document.
  *
  * Only polygons and polylines are written; every other overlay (a marker, a
@@ -196,7 +210,7 @@ export const overlaysToGeoJson = (
 ): GeoJsonDocument => {
     const features: GeoJsonFeature[] = [];
 
-    overlays.forEach((overlay) => {
+    flattenOverlays(overlays).forEach((overlay) => {
         const coordinates = overlay.coordinates ?? [];
         if (coordinates.length === 0) {
             return;

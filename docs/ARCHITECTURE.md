@@ -1258,8 +1258,12 @@ State: FOUR zustand stores in one file (`useMapStore`, `usePlaceStore`,
 `localStorage["RECENT_SEARCHES"]`.
 
 Inter-component messaging uses the local `eventEmitter` for
-`polygon-clicked`, `circle-clicked`, `rectangle-clicked`,
-`MAP_WORKSPACE_MY_MAP_CLICK`.
+`MAP_OVERLAY_SELECTED`, `MAP_IMPORT_SHAPES` / `MAP_IMPORT_SHAPES_DONE`,
+`MAP_CAPTURE_REQUEST` / `MAP_CAPTURE_DONE` and
+`MAP_WORKSPACE_MY_MAP_CLICK`. The old ad-hoc `polygon-clicked` /
+`circle-clicked` / `rectangle-clicked` events are gone: a shape now
+announces itself as `MAP_OVERLAY_SELECTED`, which carries the shape's id
+and whether the click was a shift-click.
 
 **Drawing is native, not the deprecated Drawing library.**
 `utils/MapDrawingController.tsx` implements the click-to-draw input
@@ -1658,6 +1662,104 @@ shapes expose them:
 - the name and the description must be set **before** the overlay goes
   into the store. The workspace list reads the stored objects, so a name
   written afterwards would never show up.
+
+**The tool bar is a selection-driven UI.**
+Every button in the map's tool bar acts on *the shapes that are selected*,
+so the selection is the foundation of the whole bar:
+
+- clicking a shape on the map selects it;
+- a **shift-click** adds it to the selection, or takes it out again;
+- a plain click **replaces** the selection with that one shape.
+
+The selection itself lives in the overlay store (`selectedOverlayArray`),
+not in a component's local state, so every button can ask what is
+selected and grey itself out when the answer is "nothing".
+
+The highlight is driven **from the store**, not from the click handler of
+each shape. `hooks/useOverlaySelection.ts` watches the selection and
+re-paints the outlines of the registered shapes. That ordering matters:
+a shape that was selected and then deleted must not keep its orange
+outline, and a shape drawn while another one was selected must not look
+selected either. The old code toggled a local `isHighlighted` flag inside
+each shape's own click handler, so a stale outline was entirely possible.
+
+The shape's own click handler does no more than announce the click:
+`utils/mapHandlers.ts` emits `EVENT.MAP_OVERLAY_SELECTED` with the shape's
+id and whether the click was additive (`event.domEvent.shiftKey`), and the
+selection hook does the rest. Polylines finally got a click handler here
+too — they used to have none at all, so a polyline could not be picked.
+
+**The model and the live map are tied together by a registry.**
+`mapOverlayArrayOnMap` (the model) and `overlayArrayOnMap` (the live
+`google.maps.*` objects) are two parallel lists that do **not** share an
+index — a marker is in the model but not in the native list, and a
+polygon drawn twice gives two entries in each list at different
+positions. So the overlay store carries a third structure:
+`nativeOverlayRegistry`, a `Record<string, NativeMapOverlay>` that maps a
+shape's id to the object behind it. Every drawn shape registers itself
+(`registerNativeOverlay`), which is what lets a shape be taken off the
+map by id.
+
+**What each button does now** (`components/MapTools.tsx`):
+
+| Button | What it does |
+| --- | --- |
+| Hand | Pan mode; clears the active tool and the selection |
+| Marker / Polyline / Polygon / Circle / Rectangle | Draw that shape |
+| Ruler | Measure a distance between two points |
+| Group | Put the selected shapes under one name |
+| Ungroup | Take a group apart again |
+| Delete | Take the selected shapes off the map, after asking |
+| Save | Save the drawing into "My Map" |
+| Camera | Save a picture of the map |
+| Export / Import | Write / read the shapes as a GeoJSON file |
+
+`utils/mapShapeActions.ts` holds the three operations that change the
+drawing (`deleteSelectedOverlays`, `groupSelectedOverlays`,
+`ungroupOverlays`). They all work on the **model** and take the live
+objects off the map through the registry.
+
+- **Delete** asks first, in a `CustomModal` of type `warning`: "Delete the
+  selected shapes?" — the visitor is told that the saved copies in "My Map"
+  are kept, because deleting a shape from the drawing is not the same
+  thing as deleting a saved map. It removes the shapes from the current
+  session only.
+- **Group** needs two shapes and asks for a name in the overlay modal. A
+  group is a **model-level container** (`isParent: true` + `children`) —
+  the shapes stay on the map exactly as they were, they are simply held
+  together under one name, which is what the saved map already knew how to
+  draw. The export flattens groups, so grouping never costs a shape its
+  place in the file.
+- **Ungroup** acts on the selected group or, because a group has no shape
+  of its own on the map and therefore cannot be clicked, on the most recent
+  group in the drawing. The shapes go back where the group was.
+- **Save** now asks for a title only (the description is optional) and
+  refreshes the "My Map" list in the workspace after saving.
+- **Capture** asks the map for a picture over the event bus
+  (`EVENT.MAP_CAPTURE_REQUEST` → `MAP_CAPTURE_DONE`), because the tool bar
+  sits outside the `<Map>` subtree and has no handle on the live map.
+  `utils/mapCapture.ts` composites every `<canvas>` in the map's container
+  onto one canvas, over the app's own background colour (`#161b27`), and
+  the file is written as `whereq-map-YYYY-MM-DD.png`. The map canvas is
+  **not** tainted — Google's tiles are served with CORS headers — so
+  `toDataURL` works and no server-side Static Maps key is needed.
+
+The **ruler** measures and draws nothing: two clicks produce a distance
+in an InfoWindow (`m` under 1 km, `km` above it). The measurement line and
+its bubble are not part of the overlay model, and they are removed when
+the ruler is put down.
+
+**Every button has a tooltip.** `components/ToolButton.tsx` is the one
+button in the bar: a Tailwind `group` wrapper with a `group-hover:block`
+label above the button, `pointer-events-none` so the pointer never leaves
+the button while the label is up, and the same string as the button's
+`aria-label`. The tooltip is plain CSS on purpose — FontAwesome 7's
+`<FontAwesomeIcon title="…">` prop does **not** render an SVG `<title>`
+element, so the label has to live on the button itself.
+
+The notices under the tool bar are shared: `toolNotice` in the overlay
+store, so the tool bar, the overlay modal and the drawing controller all
+report back to the same place.
 
 The app deliberately centers on Toronto (`MAP_CENTER = {lat:43.6532,
 lng:-79.3832}`) and defaults geocoder lookups to "Ontario, Canada" —

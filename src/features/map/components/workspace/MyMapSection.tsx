@@ -6,6 +6,7 @@ import { useExistingMap } from "@/features/map/hooks/useMap";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { EVENT } from "@/utils/constants";
 import { ENTRY_LIMITS } from "@/features/map/utils/constants";
+import { v4 as uuidv4 } from "uuid";
 
 export const MyMapSection = () => {
     const {
@@ -15,9 +16,10 @@ export const MyMapSection = () => {
         deleteMapOverlay,
     } = useMapStore();
 
-    const { toggleOverlayVisibility, 
+    const { toggleOverlayVisibility,
             clearOverlayArrayOnMap,
-            deleteOverlayOnMap } = useOverlayStore();
+            deleteOverlayOnMap,
+            setToolNotice } = useOverlayStore();
 
     const { placeMapOverlay } = usePlaceStore();
 
@@ -26,6 +28,8 @@ export const MyMapSection = () => {
     const clearOverlayArray = () => {
         clearOverlayArrayOnMap();
         clearAllMapOverlays();
+        setExistingMap({ ...existingMap, overlayArray: [] });
+        setToolNotice("The map was cleared.");
     };
 
     const handleOverlayClick = (overlay: MapOverlay) => {
@@ -34,9 +38,48 @@ export const MyMapSection = () => {
             toggleOverlayVisibility();
         } else {
             // setClickedOverlay(overlay);
-            eventEmitter.emit(EVENT.MAP_WORKSPACE_MY_MAP_CLICK, 
+            eventEmitter.emit(EVENT.MAP_WORKSPACE_MY_MAP_CLICK,
                 { clickedOverlay: overlay });
         }
+    };
+
+    /**
+     * Copy a saved shape.
+     *
+     * The copy gets its own id, so it is a separate shape rather than the
+     * same one twice.
+     */
+    const handleCopyOverlay = (overlay: MapOverlay) => {
+        const copy: MapOverlay = {
+            ...overlay,
+            id: uuidv4(),
+            title: overlay.title ? `${overlay.title} (copy)` : "Copy",
+        };
+
+        const updatedMap = {
+            ...existingMap,
+            overlayArray: [...(existingMap?.overlayArray ?? []), copy],
+        };
+
+        setExistingMap(updatedMap);
+        setToolNotice(`Copied "${overlay.title || "the shape"}".`);
+    };
+
+    /**
+     * Delete a saved shape.
+     */
+    const handleDeleteOverlay = (overlay: MapOverlay) => {
+        deleteOverlayOnMap(overlay.id);
+        deleteMapOverlay(overlay.id);
+
+        const updatedMap = {
+            ...existingMap,
+            overlayArray: (existingMap?.overlayArray ?? []).filter(
+                (saved: MapOverlay) => saved.id !== overlay.id
+            ),
+        };
+        setExistingMap(updatedMap);
+        setToolNotice(`Deleted "${overlay.title || "the shape"}" from My Map.`);
     };
 
     return (
@@ -47,7 +90,8 @@ export const MyMapSection = () => {
                 <button
                     onClick={clearOverlayArray}
                     className="text-sm text-red-500 hover:text-red-700"
-                    title="Clear Local Map"
+                    title="Clear the saved shapes"
+                    aria-label="Clear the saved shapes"
                 >
                     <FontAwesomeIcon icon={faTrashAlt} />
                 </button>
@@ -62,21 +106,28 @@ export const MyMapSection = () => {
                         title={overlay.title}
                         onClick={() => handleOverlayClick(overlay)}
                     >
-                        {overlay.title && overlay.title.length > 
-                            ENTRY_LIMITS.MAX_TITLE_LENGTH_SMALL ? 
+                        {overlay.title && overlay.title.length >
+                            ENTRY_LIMITS.MAX_TITLE_LENGTH_SMALL ?
                             `${overlay.title.substring(0, ENTRY_LIMITS.MAX_TITLE_LENGTH_SMALL)}...` : overlay.title || ''}
                         <div className="absolute top-2 right-2 flex gap-2">
                             <button
                                 className="text-orange-400 hover:text-blue-500"
+                                title="Copy this shape"
+                                aria-label="Copy this shape"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyOverlay(overlay);
+                                }}
                             >
                                 <FontAwesomeIcon icon={faCopy} />
                             </button>
                             <button
                                 className="text-orange-400 hover:text-red-500"
+                                title="Delete this shape"
+                                aria-label="Delete this shape"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    deleteOverlayOnMap(overlay.id);
-                                    deleteMapOverlay(overlay.id);
+                                    handleDeleteOverlay(overlay);
                                 }}
                             >
                                 <FontAwesomeIcon icon={faTrashAlt} />
