@@ -85,6 +85,10 @@ export const EVENT = {
     MAP_CAPTURE_REQUEST: "map_capture_request",
     /** The map's answer: it has a picture, or it does not. */
     MAP_CAPTURE_DONE: "map_capture_done",
+    /** The tool bar asks the map to put the last deleted shapes back. */
+    MAP_UNDO_REQUEST: "map_undo_request",
+    /** The map's answer: how many shapes it put back. */
+    MAP_UNDO_DONE: "map_undo_done",
 }
 
 export const LOCAL_APP_EVENTS = "Local_App_Events";

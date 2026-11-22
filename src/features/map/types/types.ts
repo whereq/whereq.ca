@@ -72,6 +72,36 @@ export type NativeMapOverlay =
     | google.maps.Circle
     | google.maps.Rectangle;
 
+/**
+ * One shape that was deleted, and everything needed to put it back.
+ *
+ * The live object is kept, not thrown away: a deleted shape is only taken
+ * off the map (`setMap(null)`), so the same object can be put back exactly
+ * as it was — with the vertices the visitor dragged, and with the name it
+ * was given.
+ */
+export interface DeletedShape {
+    /** The model entry that was taken off the map. */
+    overlay: MapOverlay;
+    /** Where it sat in the drawing before it was deleted. */
+    index: number;
+    /** The live object behind it, when there was one. */
+    native?: NativeMapOverlay;
+    /** True when the live object was in the native overlay list. */
+    wasInNativeList: boolean;
+}
+
+/**
+ * A deletion that can be undone.
+ *
+ * The overlay store keeps a stack of these, so the visitor can walk back
+ * through the deletions one at a time.
+ */
+export interface DeletedShapeRecord {
+    /** The shapes that were deleted, in the order they were deleted. */
+    shapes: DeletedShape[];
+}
+
 export interface MapMarker {
     id: string;
     advancedMarker: google.maps.marker.AdvancedMarkerElement;

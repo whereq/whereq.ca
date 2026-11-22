@@ -1710,14 +1710,15 @@ map by id.
 | Group | Put the selected shapes under one name |
 | Ungroup | Take a group apart again |
 | Delete | Take the selected shapes off the map, after asking |
+| Undo | Put the last deleted shapes back (Ctrl+Z does the same) |
 | Save | Save the drawing into "My Map" |
 | Camera | Save a picture of the map |
 | Export / Import | Write / read the shapes as a GeoJSON file |
 
-`utils/mapShapeActions.ts` holds the three operations that change the
-drawing (`deleteSelectedOverlays`, `groupSelectedOverlays`,
-`ungroupOverlays`). They all work on the **model** and take the live
-objects off the map through the registry.
+`utils/mapShapeActions.ts` holds the operations that change the
+drawing (`deleteSelectedOverlays`, `restoreDeletedShapes`,
+`groupSelectedOverlays`, `ungroupOverlays`). They all work on the
+**model** and take the live objects off the map through the registry.
 
 - **Delete** asks first, in a `CustomModal` of type `warning`: "Delete the
   selected shapes?" — the visitor is told that the saved copies in "My Map"
@@ -1733,6 +1734,7 @@ objects off the map through the registry.
 - **Ungroup** acts on the selected group or, because a group has no shape
   of its own on the map and therefore cannot be clicked, on the most recent
   group in the drawing. The shapes go back where the group was.
+- **Undo** puts the last deleted shapes back (see below).
 - **Save** now asks for a title only (the description is optional) and
   refreshes the "My Map" list in the workspace after saving.
 - **Capture** asks the map for a picture over the event bus
@@ -1760,6 +1762,45 @@ element, so the label has to live on the button itself.
 The notices under the tool bar are shared: `toolNotice` in the overlay
 store, so the tool bar, the overlay modal and the drawing controller all
 report back to the same place.
+
+**A deleted shape can be put back.** The overlay store keeps a stack of
+`DeletedShapeRecord`s. A record holds, for every shape that was deleted,
+the model entry, **the index it used to sit at**, and the live Google Maps
+object behind it. The live object is kept rather than thrown away, and
+that is the point: a deleted shape is only taken *off* the map
+(`setMap(null)`), so the very same object can be put back — with the
+vertices the visitor dragged, and with the name it was given.
+
+`restoreDeletedShapes(map)` puts the shapes back in three places: the
+live objects go back on the map, the registry ties them to the model
+again, and the model entries go back **where they were**. The entries are
+put back from the earliest index upwards, so each one lands in the place
+it used to hold even when several of them come back at once — the drawing
+keeps its order, and the GeoJSON export keeps the same feature order it
+had before the deletion. The shapes come back **selected**, so the visitor
+sees what came back.
+
+The undo request travels over the event bus, like the capture and the
+import: `MapTools` emits `EVENT.MAP_UNDO_REQUEST`, and
+`MapDrawingController` — which is inside `<Map>` and owns the map — puts
+the shapes back and answers with `EVENT.MAP_UNDO_DONE`. The tool bar
+waits for that answer before it claims success, exactly as it does for
+the import and the capture.
+
+Two rules keep the stack honest:
+
+- the stack is **bounded** (20 entries). Every entry holds live Google
+  Maps objects, so a long drawing session must not keep every shape that
+  was ever removed alive;
+- the stack is **emptied when the drawing is thrown away**. The single
+  choke point for that is `clearOverlayArrayOnMap` in the overlay store:
+  it takes every native object off the map, so it also clears the
+  registry (which would otherwise keep pointing at objects that are no
+  longer drawn) and the undo stack (there is nothing left to put back).
+
+`Ctrl+Z` (Cmd+Z on a Mac) does the same thing as the button. The
+shortcut is left alone inside a text field, where it belongs to the text
+the visitor is typing.
 
 The app deliberately centers on Toronto (`MAP_CENTER = {lat:43.6532,
 lng:-79.3832}`) and defaults geocoder lookups to "Ontario, Canada" —

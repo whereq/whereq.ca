@@ -43,6 +43,7 @@ import {
 } from "@/features/map/utils/mapHandlers";
 import { makeDefaultMarkderContent } from "@/features/map/utils/mapUtils";
 import { captureAndDownloadMap } from "@/features/map/utils/mapCapture";
+import { restoreDeletedShapes } from "@/features/map/utils/mapShapeActions";
 import type { ShapeToImport } from "@/features/map/utils/geoJson";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { EVENT } from "@/utils/constants";
@@ -703,6 +704,76 @@ const MapDrawingController: React.FC = () => {
     rulerLineRef.current = null;
     rulerInfoRef.current?.close();
   }, [activeTool]);
+
+  /**
+   * The undo stack belongs to the drawing.
+   *
+   * When the map goes away, the live objects it held go with it, so there
+   * is nothing left to put back. The cleanup is deliberately in an effect
+   * of its own: an effect that depends on the map would also run its
+   * cleanup every time the map instance changes identity.
+   */
+  useEffect(() => {
+    return () => {
+      useOverlayStore.getState().clearUndoStack();
+    };
+  }, []);
+
+  /**
+   * Put the last deleted shapes back.
+   *
+   * The tool bar cannot reach the map, so it asks over the event bus and
+   * this controller — which owns the map — puts the shapes back on it. The
+   * shapes come back as the very same live objects they were, so a polygon
+   * returns with the vertices the visitor dragged.
+   */
+  useEffect(() => {
+    const handleUndoRequest = () => {
+      if (useOverlayStore.getState().undoStack.length === 0) {
+        eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
+          ok: false,
+          restored: 0,
+          message: "There is nothing to undo.",
+        });
+        return;
+      }
+
+      if (!map) {
+        eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
+          ok: false,
+          restored: 0,
+          message: "The map is not ready yet, so the shapes could not be put back.",
+        });
+        return;
+      }
+
+      try {
+        const restored = restoreDeletedShapes(map);
+
+        eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
+          ok: restored > 0,
+          restored,
+          message:
+            restored > 0
+              ? `Put ${restored} shape${restored === 1 ? "" : "s"} back on the map.`
+              : "There was nothing to undo.",
+        });
+      } catch (error) {
+        console.error("Could not put the deleted shapes back:", error);
+        eventEmitter.emit(EVENT.MAP_UNDO_DONE, {
+          ok: false,
+          restored: 0,
+          message: "The shapes could not be put back.",
+        });
+      }
+    };
+
+    eventEmitter.on(EVENT.MAP_UNDO_REQUEST, handleUndoRequest);
+
+    return () => {
+      eventEmitter.off(EVENT.MAP_UNDO_REQUEST, handleUndoRequest);
+    };
+  }, [map]);
 
   /**
    * Take a picture of the map.

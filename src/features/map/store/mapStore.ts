@@ -1,10 +1,19 @@
 import { create } from "zustand";
 import { Place } from "@/features/map/types/types";
-import { Map, MapOverlay, MapMarker, NativeMapOverlay } from "@/features/map/types/types";
+import { Map, MapOverlay, MapMarker, NativeMapOverlay, DeletedShapeRecord } from "@/features/map/types/types";
 import { MapShapeType, MapToolMode, OverlayModalMode, SectionType } from "@/features/map/models/MapEnum";
 import LocalStorageHelper from "@/utils/localStorageHelper";
 import { LOCAL_STORAGE_KEYS } from "@/utils/constants";
 import { loadMapObjectFromLocalStorage } from "@/features/map/utils/mapUtils";
+
+/**
+ * How many deletions can be undone.
+ *
+ * Every entry keeps the live Google Maps objects of the shapes it deleted,
+ * so the stack is bounded rather than unbounded: a long drawing session
+ * must not hold on to every shape that was ever removed.
+ */
+const UNDO_STACK_LIMIT = 20;
 
 interface MapStore {
     isWorkspaceVisible: boolean;
@@ -209,6 +218,19 @@ export interface OverlayStore {
     removeNativeOverlay: (id: string) => void;
     clearNativeOverlayRegistry: () => void;
 
+    /**
+     * The deletions that can still be undone, oldest first.
+     *
+     * Each entry holds the shapes that were taken off the map *and* the
+     * live objects behind them, so undo puts the very same shapes back
+     * rather than redrawing them from the model.
+     */
+    undoStack: DeletedShapeRecord[];
+    pushUndoRecord: (record: DeletedShapeRecord) => void;
+    /** Take the most recent deletion off the stack and return it. */
+    popUndoRecord: () => DeletedShapeRecord | undefined;
+    clearUndoStack: () => void;
+
     overlayArrayOnMap: (
         google.maps.marker.AdvancedMarkerElement |
         google.maps.Polygon |
@@ -243,7 +265,7 @@ export interface OverlayStore {
     deleteOveryFromMap: (id: string) => void; // Delete an overlay from the map object in local storage
 }
 
-export const useOverlayStore = create<OverlayStore>((set) => ({
+export const useOverlayStore = create<OverlayStore>((set, get) => ({
     clickedOverlay: null,
     setClickedOverlay: (overlay) => set({ clickedOverlay: overlay, isOverlayVisible: true }),
     isOverlayVisible: false,
@@ -320,6 +342,22 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
     }),
     clearNativeOverlayRegistry: () => set({ nativeOverlayRegistry: {} }),
 
+    undoStack: [],
+    pushUndoRecord: (record) => set((state) => ({
+        // The stack is bounded: a long drawing session should not keep every
+        // deleted shape alive forever.
+        undoStack: [...state.undoStack, record].slice(-UNDO_STACK_LIMIT),
+    })),
+    popUndoRecord: () => {
+        const stack = get().undoStack;
+        if (stack.length === 0) {
+            return undefined;
+        }
+        set({ undoStack: stack.slice(0, -1) });
+        return stack[stack.length - 1];
+    },
+    clearUndoStack: () => set({ undoStack: [] }),
+
     selectedMarker: null,
     setSelectedMarker: (mapMarker) => set({ selectedMarker: mapMarker }),
 
@@ -351,7 +389,10 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
                 }
             });
         }
-        return { overlayArrayOnMap: [] };
+        // The whole drawing was thrown away: the live objects behind it are
+        // gone, so the registry must not keep pointing at them and there is
+        // nothing left to put back.
+        return { overlayArrayOnMap: [], nativeOverlayRegistry: {}, undoStack: [] };
     }),
     clearOverlayArrayFromMap: () => set((state) => {
         LocalStorageHelper.save(LOCAL_STORAGE_KEYS.MAP, { ...state, overlayArray: [] });
