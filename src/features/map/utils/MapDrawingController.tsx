@@ -42,6 +42,7 @@ import {
   type MapDrawingSession,
 } from "@/features/map/utils/mapHandlers";
 import { makeDefaultMarkderContent } from "@/features/map/utils/mapUtils";
+import { captureAndDownloadMap } from "@/features/map/utils/mapCapture";
 import type { ShapeToImport } from "@/features/map/utils/geoJson";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { EVENT } from "@/utils/constants";
@@ -61,6 +62,24 @@ const MIN_PATH_POINTS = 2;
 
 /** Mean Earth radius in metres, used by the haversine fallback. */
 const EARTH_RADIUS_METERS = 6378137;
+
+/**
+ * The id of the ruler tool in the tool bar's active-tool state.
+ *
+ * The ruler measures between two points; it draws no shape, so it has no
+ * shape type of its own.
+ */
+const RULER_TOOL = "ruler";
+
+/**
+ * A distance in metres, as a person would say it out loud.
+ */
+const formatDistance = (metres: number): string => {
+    if (metres < 1000) {
+        return `${Math.round(metres)} m`;
+    }
+    return `${(metres / 1000).toFixed(2)} km`;
+};
 
 /**
  * Great-circle distance in metres between two points.
@@ -138,11 +157,14 @@ const MapDrawingController: React.FC = () => {
 
   const {
     mapShapeType,
+    activeTool,
     addToOverlayArrayOnMap,
     addToMapOverlayArrayOnMap,
+    registerNativeOverlay,
     setSaveButtonInMapToolEnabled,
     setSelectedMarker,
     setDrawingUnavailable,
+    setToolNotice,
   } = useOverlayStore();
 
   /** Vertices collected so far for the shape being drawn. */
@@ -153,6 +175,12 @@ const MapDrawingController: React.FC = () => {
   const drawingEnabledRef = useRef(true);
   /** Timestamp before which map clicks are ignored. */
   const suppressClicksUntilRef = useRef(0);
+  /** The first point of the measurement the ruler is making. */
+  const rulerStartRef = useRef<google.maps.LatLng | null>(null);
+  /** The line drawn between the two measured points. */
+  const rulerLineRef = useRef<google.maps.Polyline | null>(null);
+  /** The bubble that shows the measured distance. */
+  const rulerInfoRef = useRef<google.maps.InfoWindow | null>(null);
 
   /**
    * Handed to the shape handlers so they can pause drawing on hover.
@@ -196,9 +224,17 @@ const MapDrawingController: React.FC = () => {
     ) => {
       addToOverlayArrayOnMap(nativeOverlay);
       addToMapOverlayArrayOnMap(overlay);
+      // The registry ties the shape's id to the object behind it, so the
+      // shape can be taken off the map by id later.
+      registerNativeOverlay(overlay.id, nativeOverlay);
       setSaveButtonInMapToolEnabled(true);
     },
-    [addToOverlayArrayOnMap, addToMapOverlayArrayOnMap, setSaveButtonInMapToolEnabled]
+    [
+      addToOverlayArrayOnMap,
+      addToMapOverlayArrayOnMap,
+      registerNativeOverlay,
+      setSaveButtonInMapToolEnabled,
+    ]
   );
 
   const completeMarker = useCallback(
@@ -225,9 +261,16 @@ const MapDrawingController: React.FC = () => {
       // Matches the previous DrawingManager behaviour: markers are tracked in
       // the overlay model but not in the native overlay array.
       addToMapOverlayArrayOnMap(overlay);
+      registerNativeOverlay(overlay.id, advancedMarker);
       setSaveButtonInMapToolEnabled(true);
     },
-    [map, addToMapOverlayArrayOnMap, setSaveButtonInMapToolEnabled, setSelectedMarker]
+    [
+      map,
+      addToMapOverlayArrayOnMap,
+      registerNativeOverlay,
+      setSaveButtonInMapToolEnabled,
+      setSelectedMarker,
+    ]
   );
 
   const completePath = useCallback(
@@ -355,6 +398,60 @@ const MapDrawingController: React.FC = () => {
     [map, mapShapeType]
   );
 
+  /**
+   * The ruler measures between two points.
+   *
+   * The first click sets the start, the second one measures the distance
+   * and shows it. The line and the bubble are the ruler's own: they are
+   * not part of the drawing, so they never reach the overlay model.
+   */
+  const measureTo = useCallback(
+    (point: google.maps.LatLng) => {
+      const start = rulerStartRef.current;
+
+      if (!start) {
+        rulerStartRef.current = point;
+        setToolNotice("Now click the other end of the measurement.");
+        return;
+      }
+
+      rulerStartRef.current = null;
+
+      const metres = distanceBetween(start, point);
+
+      // The line between the two points.
+      rulerLineRef.current?.setMap(null);
+      rulerLineRef.current = new google.maps.Polyline({
+        path: [start, point],
+        strokeColor: MAP_DRAWING_COLOR.HIGHLIGHT_STROKE_COLOR,
+        strokeWeight: 4,
+        clickable: false,
+        editable: false,
+        map: map ?? null,
+        zIndex: 10000,
+      });
+
+      // The distance, in a bubble halfway along the line.
+      if (!rulerInfoRef.current) {
+        rulerInfoRef.current = new google.maps.InfoWindow();
+      }
+      const middle = new google.maps.LatLng(
+        (start.lat() + point.lat()) / 2,
+        (start.lng() + point.lng()) / 2
+      );
+      rulerInfoRef.current.setContent(
+        `<div style="font-family:monospace;font-weight:bold;color:#161b27">${formatDistance(metres)}</div>`
+      );
+      rulerInfoRef.current.setPosition(middle);
+      if (map) {
+        rulerInfoRef.current.open(map);
+      }
+
+      setToolNotice(`The distance is ${formatDistance(metres)}.`);
+    },
+    [map, setToolNotice]
+  );
+
   const handleMapClick = useCallback(
     (event: google.maps.MapMouseEvent) => {
       if (!drawingEnabledRef.current) {
@@ -364,7 +461,21 @@ const MapDrawingController: React.FC = () => {
         return;
       }
       const point = event.latLng;
-      if (!point || !mapShapeType) {
+      if (!point) {
+        return;
+      }
+
+      // The ruler measures; it draws no shape.
+      if (activeTool === RULER_TOOL) {
+        try {
+          measureTo(point);
+        } catch (error) {
+          reportFailure(error);
+        }
+        return;
+      }
+
+      if (!mapShapeType) {
         return;
       }
 
@@ -382,19 +493,32 @@ const MapDrawingController: React.FC = () => {
             const nextPoints = [...points, point];
             draftRef.current = { kind: "path", points: nextPoints };
 
+            const previewOptions = {
+              strokeColor: MAP_DRAWING_PREVIEW.STROKE_COLOR,
+              strokeWeight: MAP_DRAWING_PREVIEW.STROKE_WEIGHT,
+              fillColor: MAP_DRAWING_PREVIEW.FILL_COLOR,
+              fillOpacity: MAP_DRAWING_PREVIEW.FILL_OPACITY,
+              clickable: MAP_DRAWING_PREVIEW.CLICKABLE,
+              editable: MAP_DRAWING_PREVIEW.EDITABLE,
+              map: map ?? null,
+              zIndex: 9998,
+            };
+
             if (!previewRef.current) {
-              const previewOptions = {
-                strokeColor: MAP_DRAWING_PREVIEW.STROKE_COLOR,
-                strokeWeight: MAP_DRAWING_PREVIEW.STROKE_WEIGHT,
-                clickable: MAP_DRAWING_PREVIEW.CLICKABLE,
-                editable: MAP_DRAWING_PREVIEW.EDITABLE,
-                map: map ?? null,
-                zIndex: 9998,
-              };
               previewRef.current =
                 mapShapeType === MapShapeType.Polygon
                   ? new google.maps.Polygon({ ...previewOptions, paths: nextPoints })
                   : new google.maps.Polyline({ ...previewOptions, path: nextPoints });
+            } else {
+              // The preview has to keep up with the draft on every click, not
+              // only when the pointer moves: a preview that is out of step
+              // with the draft sits on the map as a shape of its own, and it
+              // swallows the clicks meant for the shapes underneath it.
+              if (mapShapeType === MapShapeType.Polygon) {
+                (previewRef.current as google.maps.Polygon).setPath(nextPoints);
+              } else {
+                (previewRef.current as google.maps.Polyline).setPath(nextPoints);
+              }
             }
             break;
           }
@@ -454,6 +578,8 @@ const MapDrawingController: React.FC = () => {
     [
       map,
       mapShapeType,
+      activeTool,
+      measureTo,
       completeMarker,
       completeCircle,
       completeRectangle,
@@ -517,8 +643,13 @@ const MapDrawingController: React.FC = () => {
 
   // Attach the map listeners for the active shape, and tear the draft down
   // whenever the active shape changes.
+  //
+  // The ruler is a tool too: it has no shape type, but it still needs the
+  // click listener to know where the measurement starts and ends.
   useEffect(() => {
-    if (!map || !isDrawableShape(mapShapeType)) {
+    const isRulerActive = activeTool === RULER_TOOL;
+
+    if (!map || (!isDrawableShape(mapShapeType) && !isRulerActive)) {
       resetDraft();
       return;
     }
@@ -549,7 +680,69 @@ const MapDrawingController: React.FC = () => {
       }
       resetDraft();
     };
-  }, [map, mapShapeType, handleMapClick, handleMapDoubleClick, handleMapMouseMove, resetDraft, reportFailure]);
+  }, [
+    map,
+    mapShapeType,
+    activeTool,
+    handleMapClick,
+    handleMapDoubleClick,
+    handleMapMouseMove,
+    resetDraft,
+    reportFailure,
+  ]);
+
+  /**
+   * Take the ruler's line and bubble away when the ruler is put down.
+   */
+  useEffect(() => {
+    if (activeTool === RULER_TOOL) {
+      return;
+    }
+    rulerStartRef.current = null;
+    rulerLineRef.current?.setMap(null);
+    rulerLineRef.current = null;
+    rulerInfoRef.current?.close();
+  }, [activeTool]);
+
+  /**
+   * Take a picture of the map.
+   *
+   * The tool bar cannot reach the map, so it asks over the event bus and
+   * this controller — which owns the map — takes the picture and answers.
+   */
+  useEffect(() => {
+    const handleCaptureRequest = () => {
+      if (!map) {
+        eventEmitter.emit(EVENT.MAP_CAPTURE_DONE, {
+          ok: false,
+          message: "The map is not ready yet, so there is no picture to take.",
+        });
+        return;
+      }
+
+      try {
+        const saved = captureAndDownloadMap(map);
+        eventEmitter.emit(EVENT.MAP_CAPTURE_DONE, {
+          ok: saved,
+          message: saved
+            ? "The map was saved as a picture."
+            : "The map could not be captured.",
+        });
+      } catch (error) {
+        console.error("Could not capture the map:", error);
+        eventEmitter.emit(EVENT.MAP_CAPTURE_DONE, {
+          ok: false,
+          message: "The map could not be captured.",
+        });
+      }
+    };
+
+    eventEmitter.on(EVENT.MAP_CAPTURE_REQUEST, handleCaptureRequest);
+
+    return () => {
+      eventEmitter.off(EVENT.MAP_CAPTURE_REQUEST, handleCaptureRequest);
+    };
+  }, [map]);
 
   /**
    * Draw shapes that were read from a JSON file.

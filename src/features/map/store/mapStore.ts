@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Place } from "@/features/map/types/types";
-import { Map, MapOverlay, MapMarker } from "@/features/map/types/types";
+import { Map, MapOverlay, MapMarker, NativeMapOverlay } from "@/features/map/types/types";
 import { MapShapeType, MapToolMode, OverlayModalMode, SectionType } from "@/features/map/models/MapEnum";
 import LocalStorageHelper from "@/utils/localStorageHelper";
 import { LOCAL_STORAGE_KEYS } from "@/utils/constants";
@@ -175,6 +175,17 @@ export interface OverlayStore {
     drawingUnavailable: boolean;
     setDrawingUnavailable: (unavailable: boolean) => void;
 
+    /**
+     * The notice shown under the tool bar.
+     *
+     * It lives in the store rather than in the tool bar's own state
+     * because the actions that raise it are spread over several
+     * components: the tool bar, the overlay modal and the drawing
+     * controller all report back to the same place.
+     */
+    toolNotice: string | null;
+    setToolNotice: (notice: string | null | ((prev: string | null) => string | null)) => void;
+
     mapOverlayArrayOnMap: MapOverlay[];
     setMapOverlayArrayOnMap: (overlayArray: MapOverlay[] | ((prev: MapOverlay[]) => MapOverlay[])) => void;
     addToMapOverlayArrayOnMap: (overlay: MapOverlay) => void;
@@ -183,6 +194,20 @@ export interface OverlayStore {
     selectedOverlayArray: MapOverlay[];
     setSelectedOverlayArray: (overlayArray: MapOverlay[] | ((prev: MapOverlay[]) => MapOverlay[])) => void;
     toggleOverlayVisibility: () => void;
+
+    /**
+     * The live Google Maps object behind each shape, keyed by the shape's id.
+     *
+     * The model (`mapOverlayArrayOnMap`) and the native overlays
+     * (`overlayArrayOnMap`) are two parallel lists that do not share an
+     * index — a marker, for instance, is in the model but not in the
+     * native list. The registry is what ties them together, so a shape can
+     * be taken off the map by id.
+     */
+    nativeOverlayRegistry: Record<string, NativeMapOverlay>;
+    registerNativeOverlay: (id: string, overlay: NativeMapOverlay) => void;
+    removeNativeOverlay: (id: string) => void;
+    clearNativeOverlayRegistry: () => void;
 
     overlayArrayOnMap: (
         google.maps.marker.AdvancedMarkerElement |
@@ -195,7 +220,17 @@ export interface OverlayStore {
         google.maps.Polygon |
         google.maps.Polyline |
         google.maps.Circle |
-        google.maps.Rectangle)[]) => void;
+        google.maps.Rectangle)[] | ((prev: (
+        google.maps.marker.AdvancedMarkerElement |
+        google.maps.Polygon |
+        google.maps.Polyline |
+        google.maps.Circle |
+        google.maps.Rectangle)[]) => (
+        google.maps.marker.AdvancedMarkerElement |
+        google.maps.Polygon |
+        google.maps.Polyline |
+        google.maps.Circle |
+        google.maps.Rectangle)[])) => void;
     addToOverlayArrayOnMap: (overlay: 
         google.maps.marker.AdvancedMarkerElement |
         google.maps.Polygon | 
@@ -227,6 +262,10 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
     setOverlayModalMode: (mode: OverlayModalMode | null) => set({ overlayModalMode: mode }),
     drawingUnavailable: false,
     setDrawingUnavailable: (unavailable) => set({ drawingUnavailable: unavailable }),
+    toolNotice: null,
+    setToolNotice: (notice) => set((state) => ({
+        toolNotice: typeof notice === "function" ? notice(state.toolNotice) : notice,
+    })),
 
     mapOverlayArrayOnMap: [],
     setMapOverlayArrayOnMap: (overlayArray) => set((state) => ({
@@ -270,11 +309,26 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
         selectedOverlayArray: typeof overlayArray === "function" ? overlayArray(state.selectedOverlayArray) : overlayArray,
     })),
 
+    nativeOverlayRegistry: {},
+    registerNativeOverlay: (id, overlay) => set((state) => ({
+        nativeOverlayRegistry: { ...state.nativeOverlayRegistry, [id]: overlay },
+    })),
+    removeNativeOverlay: (id) => set((state) => {
+        const registry = { ...state.nativeOverlayRegistry };
+        delete registry[id];
+        return { nativeOverlayRegistry: registry };
+    }),
+    clearNativeOverlayRegistry: () => set({ nativeOverlayRegistry: {} }),
+
     selectedMarker: null,
     setSelectedMarker: (mapMarker) => set({ selectedMarker: mapMarker }),
 
     overlayArrayOnMap: [],
-    setOverlayArrayOnMap: (overlayArray) => set({ overlayArrayOnMap: overlayArray }),
+    setOverlayArrayOnMap: (overlayArray) => set((state) => ({
+        overlayArrayOnMap: typeof overlayArray === "function"
+            ? overlayArray(state.overlayArrayOnMap)
+            : overlayArray,
+    })),
     addToOverlayArrayOnMap: (overlay) => set((state) => ({ 
         overlayArrayOnMap: [...state.overlayArrayOnMap, overlay] 
     })),

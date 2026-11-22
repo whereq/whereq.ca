@@ -56,6 +56,22 @@ export interface MarkerIcon {
     heightPercent?: number;
 }
 
+/**
+ * The live Google Maps object that backs a `MapOverlay`.
+ *
+ * The model (`MapOverlay`) and the native overlay are two separate things:
+ * the model is what the app stores and persists, the native overlay is
+ * what is actually drawn on the map. The overlay store keeps a registry
+ * that ties them together by id, so a shape can be removed from the map
+ * by id.
+ */
+export type NativeMapOverlay =
+    | google.maps.marker.AdvancedMarkerElement
+    | google.maps.Polygon
+    | google.maps.Polyline
+    | google.maps.Circle
+    | google.maps.Rectangle;
+
 export interface MapMarker {
     id: string;
     advancedMarker: google.maps.marker.AdvancedMarkerElement;

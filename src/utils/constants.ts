@@ -79,6 +79,12 @@ export const EVENT = {
     MAP_IMPORT_SHAPES: "map_import_shapes",
     /** The map's answer: how many of those shapes were actually drawn. */
     MAP_IMPORT_SHAPES_DONE: "map_import_shapes_done",
+    /** A shape on the map was clicked: it becomes the selected shape. */
+    MAP_OVERLAY_SELECTED: "map_overlay_selected",
+    /** The tool bar asks the map for a picture of itself. */
+    MAP_CAPTURE_REQUEST: "map_capture_request",
+    /** The map's answer: it has a picture, or it does not. */
+    MAP_CAPTURE_DONE: "map_capture_done",
 }
 
 export const LOCAL_APP_EVENTS = "Local_App_Events";
