@@ -13,7 +13,12 @@
  * which is exactly why the registry exists.
  */
 import { v4 as uuidv4 } from "uuid";
-import type { MapOverlay, NativeMapOverlay } from "@/features/map/types/types";
+import type {
+    MapOverlay,
+    NativeMapOverlay,
+    DeletedShape,
+    DeletedShapeRecord,
+} from "@/features/map/types/types";
 import { useOverlayStore } from "@/features/map/store/mapStore";
 
 /** Take a native overlay off the map. */
@@ -28,21 +33,38 @@ const detachFromMap = (native: NativeMapOverlay | undefined): void => {
     native.setMap(null);
 };
 
+/** Put a native overlay back on the map. */
+const attachToMap = (native: NativeMapOverlay, map: google.maps.Map): void => {
+    if (native instanceof google.maps.marker.AdvancedMarkerElement) {
+        native.map = map;
+        return;
+    }
+    native.setMap(map);
+};
+
 /**
  * Delete the selected shapes: off the map, and out of the model.
  *
- * Returns how many shapes were deleted. The saved copies in "My Map" are
- * left alone — those are a separate collection.
+ * What was removed is recorded on the undo stack, so the visitor can put
+ * the very same shapes back: the live objects are kept, so a shape comes
+ * back exactly as it was, with the vertices the visitor dragged.
+ *
+ * The saved copies in "My Map" are left alone — those are a separate
+ * collection.
+ *
+ * Returns how many shapes were deleted.
  */
 export const deleteSelectedOverlays = (): number => {
     const {
         selectedOverlayArray,
         mapOverlayArrayOnMap,
         nativeOverlayRegistry,
+        overlayArrayOnMap,
         setMapOverlayArrayOnMap,
         setOverlayArrayOnMap,
         removeNativeOverlay,
         setSelectedOverlayArray,
+        pushUndoRecord,
     } = useOverlayStore.getState();
 
     const ids = selectedOverlayArray.map((overlay) => overlay.id);
@@ -50,10 +72,36 @@ export const deleteSelectedOverlays = (): number => {
         return 0;
     }
 
+    // Remember what is about to go, and where it was, so it can go back
+    // exactly as it was.
+    const shapes: DeletedShape[] = [];
+
+    ids.forEach((id) => {
+        const index = mapOverlayArrayOnMap.findIndex((overlay) => overlay.id === id);
+        if (index === -1) {
+            return;
+        }
+
+        const overlay = mapOverlayArrayOnMap[index];
+        const native = nativeOverlayRegistry[id];
+
+        shapes.push({
+            overlay,
+            index,
+            native,
+            // A marker is tracked in the model but not in the native list.
+            wasInNativeList: native ? overlayArrayOnMap.includes(native) : false,
+        });
+    });
+
+    if (shapes.length === 0) {
+        return 0;
+    }
+
     // The objects that are about to go are the very objects in the native
     // list, so identity is enough to recognise them.
-    const removedNatives = ids
-        .map((id) => nativeOverlayRegistry[id])
+    const removedNatives = shapes
+        .map((shape) => shape.native)
         .filter((native): native is NativeMapOverlay => Boolean(native));
 
     ids.forEach((id) => {
@@ -68,7 +116,71 @@ export const deleteSelectedOverlays = (): number => {
     setMapOverlayArrayOnMap(mapOverlayArrayOnMap.filter((overlay) => !ids.includes(overlay.id)));
     setSelectedOverlayArray([]);
 
-    return ids.length;
+    const record: DeletedShapeRecord = { shapes };
+    pushUndoRecord(record);
+
+    return shapes.length;
+};
+
+/**
+ * Put the most recent deletion back.
+ *
+ * The shapes go back where they were, the live objects go back on the map,
+ * and they come back selected — so the visitor can see what came back.
+ *
+ * Returns how many shapes were put back, or 0 when there was nothing to
+ * undo.
+ */
+export const restoreDeletedShapes = (map: google.maps.Map): number => {
+    const {
+        popUndoRecord,
+        setMapOverlayArrayOnMap,
+        setOverlayArrayOnMap,
+        registerNativeOverlay,
+        setSelectedOverlayArray,
+    } = useOverlayStore.getState();
+
+    const record = popUndoRecord();
+    if (!record || record.shapes.length === 0) {
+        return 0;
+    }
+
+    // The live objects go back on the map, and into the registry that ties
+    // them to the model.
+    record.shapes.forEach((shape) => {
+        if (!shape.native) {
+            return;
+        }
+        attachToMap(shape.native, map);
+        registerNativeOverlay(shape.overlay.id, shape.native);
+    });
+
+    // The ones that were in the native overlay list go back into it.
+    const nativeList = record.shapes
+        .filter((shape) => shape.wasInNativeList && shape.native)
+        .map((shape) => shape.native as NativeMapOverlay);
+
+    if (nativeList.length > 0) {
+        setOverlayArrayOnMap((state) => [...state, ...nativeList]);
+    }
+
+    // The model entries go back where they were. They are put back from the
+    // earliest index upwards, so each one lands in the place it used to
+    // hold even when several of them come back at once.
+    const restored = [...record.shapes].sort((a, b) => a.index - b.index);
+
+    setMapOverlayArrayOnMap((current) => {
+        const next = [...current];
+        restored.forEach((shape) => {
+            next.splice(Math.min(shape.index, next.length), 0, shape.overlay);
+        });
+        return next;
+    });
+
+    // They come back selected, so the visitor sees what came back.
+    setSelectedOverlayArray(restored.map((shape) => shape.overlay));
+
+    return restored.length;
 };
 
 /**

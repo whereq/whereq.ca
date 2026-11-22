@@ -10,6 +10,7 @@ import {
     faObjectGroup,
     faObjectUngroup,
     faRemove,
+    faRotateLeft,
     faSave,
     faCamera,
     faFileExport,
@@ -50,6 +51,13 @@ const IMPORT_ANSWER_TIMEOUT_MS = 3000;
  */
 const CAPTURE_ANSWER_TIMEOUT_MS = 8000;
 
+/**
+ * How long the tool bar waits for the map to put the deleted shapes back.
+ * The map answers immediately, so this only ever fires when the map is not
+ * there at all.
+ */
+const UNDO_ANSWER_TIMEOUT_MS = 3000;
+
 /** The id of the ruler tool in the tool bar's active-tool state. */
 const RULER_TOOL = "ruler";
 
@@ -74,6 +82,7 @@ const MapTools : React.FC = () => {
         setClickedOverlay,
         drawingUnavailable,
         selectedOverlayArray,
+        undoStack,
         toolNotice,
         setToolNotice,
     } = useOverlayStore();
@@ -281,6 +290,87 @@ const MapTools : React.FC = () => {
         );
     }, [setToolNotice]);
 
+    /**
+     * Put the last deleted shapes back.
+     *
+     * The tool bar sits outside the <Map> subtree and cannot reach the map
+     * itself, so the request goes over the event bus and the drawing
+     * controller — which owns the map — puts the shapes back on it.
+     */
+    const handleUndo = useCallback(() => {
+        if (useOverlayStore.getState().undoStack.length === 0) {
+            setToolNotice("There is nothing to undo.");
+            return;
+        }
+
+        setToolNotice("Putting the shapes back…");
+
+        const onUndone = ({
+            message,
+        }: {
+            ok: boolean;
+            restored: number;
+            message: string;
+        }) => {
+            window.clearTimeout(timeout);
+            eventEmitter.off<{ ok: boolean; restored: number; message: string }>(
+                EVENT.MAP_UNDO_DONE,
+                onUndone
+            );
+            setToolNotice(message);
+        };
+
+        let timeout = 0;
+
+        eventEmitter.on<{ ok: boolean; restored: number; message: string }>(
+            EVENT.MAP_UNDO_DONE,
+            onUndone
+        );
+
+        timeout = window.setTimeout(() => {
+            eventEmitter.off<{ ok: boolean; restored: number; message: string }>(
+                EVENT.MAP_UNDO_DONE,
+                onUndone
+            );
+            setToolNotice((current) =>
+                current === "Putting the shapes back…"
+                    ? "The map did not answer - try again in a moment."
+                    : current
+            );
+        }, UNDO_ANSWER_TIMEOUT_MS);
+
+        eventEmitter.emit(EVENT.MAP_UNDO_REQUEST);
+    }, [setToolNotice]);
+
+    /**
+     * Ctrl+Z (Cmd+Z on a Mac) undoes the last delete.
+     *
+     * The shortcut is left alone inside a text field, where it belongs to
+     * the text the visitor is typing.
+     */
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!event.ctrlKey && !event.metaKey) {
+                return;
+            }
+            if (event.key !== "z" && event.key !== "Z") {
+                return;
+            }
+
+            const target = event.target as HTMLElement | null;
+            const tag = target?.tagName?.toLowerCase();
+            if (tag === "input" || tag === "textarea" || target?.isContentEditable) {
+                return;
+            }
+
+            event.preventDefault();
+            handleUndo();
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [handleUndo]);
+
     useEffect(() => {        if (mapToolMode === MapToolMode.Hand) {
             setActiveTool(null);
             setMapShapeType(null);
@@ -378,6 +468,12 @@ const MapTools : React.FC = () => {
                     label="Delete the selected shapes"
                     onClick={() => setIsDeleteQuestionOpen(true)}
                     disabled={selectedOverlayArray.length === 0}
+                />
+                <ToolButton
+                    icon={faRotateLeft}
+                    label="Undo the last delete"
+                    onClick={handleUndo}
+                    disabled={undoStack.length === 0}
                 />
                 <ToolButton
                     icon={faSave}
