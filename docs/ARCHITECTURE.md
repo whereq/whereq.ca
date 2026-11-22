@@ -1730,11 +1730,14 @@ take the live objects off the map through the registry.
   the shapes stay on the map exactly as they were, they are simply held
   together under one name, which is what the saved map already knew how to
   draw. The export flattens groups, so grouping never costs a shape its
-  place in the file.
+  place in the file. The group **takes the place of the first shape it
+  holds**, so grouping a run of shapes leaves the drawing in the order it
+  was in.
 - **Ungroup** acts on the selected group or, because a group has no shape
   of its own on the map and therefore cannot be clicked, on the most recent
   group in the drawing. The shapes go back where the group was.
-- **Undo** puts the last deleted shapes back (see below).
+- **Undo** takes the last change back — a deletion, a grouping or an
+  ungrouping (see below).
 - **Save** now asks for a title only (the description is optional) and
   refreshes the "My Map" list in the workspace after saving.
 - **Capture** asks the map for a picture over the event bus
@@ -1750,6 +1753,39 @@ The **ruler** measures and draws nothing: two clicks produce a distance
 in an InfoWindow (`m` under 1 km, `km` above it). The measurement line and
 its bubble are not part of the overlay model, and they are removed when
 the ruler is put down.
+
+**The drawing's model is a tree, not a list.**
+`mapOverlayArrayOnMap` holds the shapes that are drawn — but a group holds
+its shapes in `children` instead, so **a grouped shape is not in that
+list**. It is still drawn on the map, still clickable, and it is still in
+the app's model; it just sits one level down.
+
+`utils/overlayTree.ts` holds the pure functions that walk that tree:
+
+| Function | What it does |
+| --- | --- |
+| `findOverlayLocation(overlays, id)` | finds a shape wherever it is, and says which group it is in |
+| `containsOverlay(overlays, id)` | whether the shape is in the tree at all |
+| `collectOverlays(overlays)` | every shape, in the order they are drawn |
+| `removeOverlayFromTree(overlays, id)` | takes a shape out — from the top of the drawing, or out of its group |
+| `insertOverlayIntoTree(overlays, overlay, containerId, index)` | puts a shape back where it was |
+
+Three things follow from the tree, and the code obeys all three:
+
+- **a grouped shape can be picked.** The selection looks the clicked shape
+  up with `findOverlayLocation`, not with `Array.find` on the top-level
+  list, so a shape inside a group is selected and highlighted like any
+  other;
+- **a grouped shape can be deleted.** The delete takes the shape out of
+  the group it was in. The group itself stays, with what is left of it;
+- **a grouped shape can be put back.** The undo record remembers the
+  group the shape came out of (`containerId`), so undo puts it back into
+  that group at the place it held — not loose at the top of the drawing.
+
+Grouping works across the tree too: a shape that is already in one group
+can be picked together with a loose shape, and the new group takes both of
+them — the first one out of its old group, the second one off the top of
+the drawing.
 
 **Every button has a tooltip.** `components/ToolButton.tsx` is the one
 button in the bar: a Tailwind `group` wrapper with a `group-hover:block`
@@ -1774,8 +1810,9 @@ are three kinds of change the tool bar can make:
 | `ungroup` | nothing — the shapes stay | lets the shapes out of the group |
 
 A record holds, for every model entry the change took away, the entry
-itself, **the index it used to sit at**, and the live Google Maps object
-behind it. For a deletion the live object is kept rather than thrown away,
+itself, **the index it used to sit at**, **the group it sat in** (when it
+was inside one), and the live Google Maps object behind it. For a
+deletion the live object is kept rather than thrown away,
 and that is the point: a deleted shape is only taken *off* the map
 (`setMap(null)`), so the very same object can be put back — with the
 vertices the visitor dragged, and with the name it was given.
@@ -1890,6 +1927,28 @@ Two details worth knowing:
   `toast` handle throws when no provider has ever mounted).
 - The demo renders the **published package**, not local source. A fix in the
   library only shows up here after a new npm release.
+
+**The page gives the demo the room, not the prose.** Three decisions make
+that happen:
+
+- the workspace starts at **58% of the page** (a share rather than a fixed
+  number of pixels, so the demo keeps its room on a big screen and on a
+  small one) and can be dragged up to 74%;
+- the documentation panel is capped at **38rem** — a readable measure. The
+  rest of the width would be empty anyway, and the demo and the example
+  code need it more;
+- **the code never wraps.** `.wq-react__code` uses `white-space: pre` with
+  `overflow-x: auto`, so a long line scrolls sideways instead of breaking
+  into two. A wrapped snippet is a broken snippet: the reader has to work
+  out which part belongs to which line. Measured on the real page, the
+  longest sample (88 characters) fits without scrolling at 1266 px wide,
+  and the block has no horizontal overflow at all.
+
+The component cards sit in a **vertical list inside the library's own
+`<Scrollbar>`** — the very primitive the page is demonstrating. The panel
+has a max height, so a longer list scrolls instead of pushing the rest of
+the page down, and the scrollbar is the library's own rather than the
+browser's.
 
 ### `tag/`
 

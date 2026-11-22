@@ -21,6 +21,13 @@ import type {
     UndoRecord,
 } from "@/features/map/types/types";
 import { useOverlayStore } from "@/features/map/store/mapStore";
+import {
+    collectOverlays,
+    findOverlayLocation,
+    insertOverlayIntoTree,
+    removeOverlayFromTree,
+    type OverlayLocation,
+} from "@/features/map/utils/overlayTree";
 
 /** Take a native overlay off the map. */
 const detachFromMap = (native: NativeMapOverlay | undefined): void => {
@@ -74,21 +81,23 @@ export const deleteSelectedOverlays = (): number => {
     }
 
     // Remember what is about to go, and where it was, so it can go back
-    // exactly as it was.
+    // exactly as it was. A shape inside a group is not in the drawing's
+    // own list, so the whole tree is searched — and the group it sat in
+    // is remembered, so it can be put back into that group.
     const shapes: RestoredOverlay[] = [];
 
     ids.forEach((id) => {
-        const index = mapOverlayArrayOnMap.findIndex((overlay) => overlay.id === id);
-        if (index === -1) {
+        const location = findOverlayLocation(mapOverlayArrayOnMap, id);
+        if (!location) {
             return;
         }
 
-        const overlay = mapOverlayArrayOnMap[index];
         const native = nativeOverlayRegistry[id];
 
         shapes.push({
-            overlay,
-            index,
+            overlay: location.overlay,
+            index: location.index,
+            containerId: location.group?.id,
             native,
             // The shape is about to be taken off the map.
             wasDetached: true,
@@ -119,7 +128,14 @@ export const deleteSelectedOverlays = (): number => {
     });
 
     setOverlayArrayOnMap((state) => state.filter((native) => !removedNatives.includes(native)));
-    setMapOverlayArrayOnMap(mapOverlayArrayOnMap.filter((overlay) => !ids.includes(overlay.id)));
+
+    // The shapes come out of the drawing — from the top of it, or out of
+    // the group they were in.
+    let next = mapOverlayArrayOnMap;
+    shapes.forEach((shape) => {
+        next = removeOverlayFromTree(next, shape.overlay.id);
+    });
+    setMapOverlayArrayOnMap(next);
     setSelectedOverlayArray([]);
 
     const record: UndoRecord = { action: "delete", restored: shapes, removedIds: [] };
@@ -158,13 +174,19 @@ export const undoLastChange = (
 
     // The model goes back to where it was. The entries are put back from
     // the earliest index upwards, so each one lands in the place it used
-    // to hold even when several of them come back at once.
+    // to hold even when several of them come back at once. A shape that
+    // came out of a group goes back into that group.
     const restored = [...record.restored].sort((a, b) => a.index - b.index);
 
     setMapOverlayArrayOnMap((current) => {
-        const next = current.filter((overlay) => !record.removedIds.includes(overlay.id));
+        let next = current.filter((overlay) => !record.removedIds.includes(overlay.id));
         restored.forEach((entry) => {
-            next.splice(Math.min(entry.index, next.length), 0, entry.overlay);
+            next = insertOverlayIntoTree(
+                next,
+                entry.overlay,
+                entry.containerId,
+                entry.index
+            );
         });
         return next;
     });
@@ -245,7 +267,17 @@ export const groupSelectedOverlays = (
     } = useOverlayStore.getState();
 
     const ids = selectedOverlayArray.map((overlay) => overlay.id);
-    const children = mapOverlayArrayOnMap.filter((overlay) => ids.includes(overlay.id));
+
+    // The selected shapes are found wherever they are: a shape inside a
+    // group is not in the drawing's own list, but it can still be picked,
+    // and it can still be put into a group of its own.
+    const locations = ids
+        .map((id) => findOverlayLocation(mapOverlayArrayOnMap, id))
+        .filter((location): location is OverlayLocation => Boolean(location));
+
+    const children = collectOverlays(mapOverlayArrayOnMap).filter((overlay) =>
+        ids.includes(overlay.id)
+    );
 
     // A group of one is not a group.
     if (children.length < 2) {
@@ -262,17 +294,36 @@ export const groupSelectedOverlays = (
 
     // Remember where each shape used to sit, so the grouping can be taken
     // apart again. The shapes stay on the map, so nothing is detached.
-    const restored: RestoredOverlay[] = children.map((child) => ({
-        overlay: child,
-        index: mapOverlayArrayOnMap.findIndex((overlay) => overlay.id === child.id),
-        native: nativeOverlayRegistry[child.id],
+    const restored: RestoredOverlay[] = locations.map((location) => ({
+        overlay: location.overlay,
+        index: location.index,
+        containerId: location.group?.id,
+        native: nativeOverlayRegistry[location.overlay.id],
         wasDetached: false,
     }));
 
-    setMapOverlayArrayOnMap([
-        ...mapOverlayArrayOnMap.filter((overlay) => !ids.includes(overlay.id)),
-        parent,
-    ]);
+    // The shapes come out of the drawing — from the top of it, or out of
+    // the group they were in.
+    let next = mapOverlayArrayOnMap;
+    children.forEach((child) => {
+        next = removeOverlayFromTree(next, child.id);
+    });
+
+    // The group takes the place of the first shape it holds that sits at
+    // the top of the drawing — so grouping a run of shapes leaves the
+    // drawing in the order it was in. A group of shapes that all live
+    // inside another group goes to the end.
+    const topLevelIndexes = children
+        .map((child) => mapOverlayArrayOnMap.findIndex((overlay) => overlay.id === child.id))
+        .filter((index) => index !== -1);
+
+    const insertAt = topLevelIndexes.length
+        ? Math.min(...topLevelIndexes)
+        : mapOverlayArrayOnMap.length;
+
+    const at = Math.min(insertAt, next.length);
+
+    setMapOverlayArrayOnMap([...next.slice(0, at), parent, ...next.slice(at)]);
     setSelectedOverlayArray([]);
 
     pushUndoRecord({

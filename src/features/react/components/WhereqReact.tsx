@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FaGithub } from "react-icons/fa";
+import { Scrollbar } from "@whereq/react";
 
 import { SectionType } from "@/features/react/models/ReactEnum";
 import { useReactStore } from "@/features/react/store/reactStore";
@@ -52,26 +53,43 @@ export const WhereqReact = () => {
                 </a>
             </div>
 
+            {/*
+                The primitives sit in a panel of their own, as a vertical
+                list. When the library grows and there are more of them,
+                the panel scrolls — and it scrolls with the library's own
+                scrollbar, the one this demo is about.
+            */}
             <div className="wq-react__index">
-                {Object.values(SectionType).map((section) => {
-                    const item = SECTION_META[section];
-                    return (
-                        <button
-                            key={section}
-                            type="button"
-                            className="wq-react__primitive"
-                            onClick={() => openSection(section)}
-                        >
-                            <span className="wq-react__primitive-icon">
-                                <FontAwesomeIcon icon={item.icon} />
-                            </span>
-                            <span>
-                                <span className="wq-react__primitive-name">{item.title}</span>
-                                <span className="wq-react__primitive-blurb">{item.blurb}</span>
-                            </span>
-                        </button>
-                    );
-                })}
+                <Scrollbar
+                    theme="neutral"
+                    size={5}
+                    radius={3}
+                    autoHide
+                    style={{ maxHeight: 520, overflowY: "auto" }}
+                >
+                    <div className="wq-react__index-grid">
+                        {Object.values(SectionType).map((section) => {
+                            const item = SECTION_META[section];
+                            return (
+                                <button
+                                    key={section}
+                                    type="button"
+                                    className="wq-react__primitive"
+                                    title={item.blurb}
+                                    onClick={() => openSection(section)}
+                                >
+                                    <span className="wq-react__primitive-icon">
+                                        <FontAwesomeIcon icon={item.icon} />
+                                    </span>
+                                    <span>
+                                        <span className="wq-react__primitive-name">{item.title}</span>
+                                        <span className="wq-react__primitive-blurb">{item.blurb}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Scrollbar>
             </div>
 
             <section className="wq-react__child">

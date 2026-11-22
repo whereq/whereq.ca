@@ -18,6 +18,7 @@ import { useOverlayStore } from "@/features/map/store/mapStore";
 import { eventEmitter } from "@/utils/eventEmitter";
 import { EVENT } from "@/utils/constants";
 import { highlightShape } from "@/features/map/utils/mapUtils";
+import { findOverlayLocation } from "@/features/map/utils/overlayTree";
 
 export const useOverlaySelection = () => {
     const { selectedOverlayArray, nativeOverlayRegistry } = useOverlayStore();
@@ -27,7 +28,8 @@ export const useOverlaySelection = () => {
      *
      * The event carries the shape's id; the model behind it is looked up
      * in the store, because the native overlay knows nothing about the
-     * app's own model.
+     * app's own model. The lookup walks the whole tree, so a shape that
+     * sits inside a group can be picked like any other.
      */
     useEffect(() => {
         const handleOverlaySelected = ({
@@ -40,7 +42,7 @@ export const useOverlaySelection = () => {
             const { mapOverlayArrayOnMap, selectedOverlayArray: current } =
                 useOverlayStore.getState();
 
-            const model = mapOverlayArrayOnMap.find((overlay) => overlay.id === overlayId);
+            const model = findOverlayLocation(mapOverlayArrayOnMap, overlayId)?.overlay;
             if (!model) {
                 return;
             }

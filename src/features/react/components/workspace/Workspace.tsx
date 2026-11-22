@@ -14,15 +14,20 @@ import { CountryFlagSection } from "@/features/react/components/workspace/Countr
  *
  * It is a resizable panel (like the other Lab features) so a visitor
  * can widen the demo or give the documentation the room instead.
+ *
+ * It starts wide on purpose: the demo and the example code are what the
+ * visitor came for, and the code has to stay on one line to be readable.
+ * The width is a share of the page rather than a fixed number of pixels,
+ * so the demo keeps its room on a big screen and on a small one.
  */
 export const Workspace = () => {
     const { activeSection } = useReactStore();
 
     return (
         <Resizable
-            defaultSize={{ width: 440, height: "100%" }}
-            minWidth={320}
-            maxWidth="45%"
+            defaultSize={{ width: "58%", height: "100%" }}
+            minWidth={420}
+            maxWidth="74%"
             enable={{ right: true }}
             className="wq-react__workspace"
             handleStyles={{
