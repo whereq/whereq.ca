@@ -291,11 +291,11 @@ const MapTools : React.FC = () => {
     }, [setToolNotice]);
 
     /**
-     * Put the last deleted shapes back.
+     * Take the last change to the drawing back.
      *
      * The tool bar sits outside the <Map> subtree and cannot reach the map
      * itself, so the request goes over the event bus and the drawing
-     * controller — which owns the map — puts the shapes back on it.
+     * controller — which owns the map — takes the change back.
      */
     const handleUndo = useCallback(() => {
         if (useOverlayStore.getState().undoStack.length === 0) {
@@ -303,7 +303,7 @@ const MapTools : React.FC = () => {
             return;
         }
 
-        setToolNotice("Putting the shapes back…");
+        setToolNotice("Taking the last change back…");
 
         const onUndone = ({
             message,
@@ -333,7 +333,7 @@ const MapTools : React.FC = () => {
                 onUndone
             );
             setToolNotice((current) =>
-                current === "Putting the shapes back…"
+                current === "Taking the last change back…"
                     ? "The map did not answer - try again in a moment."
                     : current
             );
@@ -471,7 +471,7 @@ const MapTools : React.FC = () => {
                 />
                 <ToolButton
                     icon={faRotateLeft}
-                    label="Undo the last delete"
+                    label="Undo the last change"
                     onClick={handleUndo}
                     disabled={undoStack.length === 0}
                 />

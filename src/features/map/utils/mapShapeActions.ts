@@ -16,8 +16,9 @@ import { v4 as uuidv4 } from "uuid";
 import type {
     MapOverlay,
     NativeMapOverlay,
-    DeletedShape,
-    DeletedShapeRecord,
+    RestoredOverlay,
+    UndoAction,
+    UndoRecord,
 } from "@/features/map/types/types";
 import { useOverlayStore } from "@/features/map/store/mapStore";
 
@@ -74,7 +75,7 @@ export const deleteSelectedOverlays = (): number => {
 
     // Remember what is about to go, and where it was, so it can go back
     // exactly as it was.
-    const shapes: DeletedShape[] = [];
+    const shapes: RestoredOverlay[] = [];
 
     ids.forEach((id) => {
         const index = mapOverlayArrayOnMap.findIndex((overlay) => overlay.id === id);
@@ -89,6 +90,8 @@ export const deleteSelectedOverlays = (): number => {
             overlay,
             index,
             native,
+            // The shape is about to be taken off the map.
+            wasDetached: true,
             // A marker is tracked in the model but not in the native list.
             wasInNativeList: native ? overlayArrayOnMap.includes(native) : false,
         });
@@ -104,34 +107,42 @@ export const deleteSelectedOverlays = (): number => {
         .map((shape) => shape.native)
         .filter((native): native is NativeMapOverlay => Boolean(native));
 
-    ids.forEach((id) => {
-        const native = nativeOverlayRegistry[id];
-        if (native) {
-            detachFromMap(native);
+    // Only the shapes that were actually found in the drawing are taken off
+    // the map. A shape that is inside a group is not in the drawing's own
+    // list, so it is not in this record — and it must not be taken off the
+    // map either, or it would be lost with no way to put it back.
+    shapes.forEach((shape) => {
+        if (shape.native) {
+            detachFromMap(shape.native);
+            removeNativeOverlay(shape.overlay.id);
         }
-        removeNativeOverlay(id);
     });
 
     setOverlayArrayOnMap((state) => state.filter((native) => !removedNatives.includes(native)));
     setMapOverlayArrayOnMap(mapOverlayArrayOnMap.filter((overlay) => !ids.includes(overlay.id)));
     setSelectedOverlayArray([]);
 
-    const record: DeletedShapeRecord = { shapes };
+    const record: UndoRecord = { action: "delete", restored: shapes, removedIds: [] };
     pushUndoRecord(record);
 
     return shapes.length;
 };
 
 /**
- * Put the most recent deletion back.
+ * Take the last change back.
  *
- * The shapes go back where they were, the live objects go back on the map,
- * and they come back selected — so the visitor can see what came back.
+ * A deletion puts the live objects back on the map; a grouping and an
+ * ungrouping leave the map alone and only change the model, because the
+ * shapes stay on the map in both cases.
  *
- * Returns how many shapes were put back, or 0 when there was nothing to
- * undo.
+ * The model goes back to where it was: the entries the change added come
+ * out, and the entries it took away go back where they were.
+ *
+ * Returns what was undone, or `null` when there was nothing to undo.
  */
-export const restoreDeletedShapes = (map: google.maps.Map): number => {
+export const undoLastChange = (
+    map: google.maps.Map
+): { count: number; action: UndoAction } | null => {
     const {
         popUndoRecord,
         setMapOverlayArrayOnMap,
@@ -141,46 +152,74 @@ export const restoreDeletedShapes = (map: google.maps.Map): number => {
     } = useOverlayStore.getState();
 
     const record = popUndoRecord();
-    if (!record || record.shapes.length === 0) {
-        return 0;
+    if (!record || record.restored.length === 0) {
+        return null;
     }
 
-    // The live objects go back on the map, and into the registry that ties
-    // them to the model.
-    record.shapes.forEach((shape) => {
-        if (!shape.native) {
-            return;
-        }
-        attachToMap(shape.native, map);
-        registerNativeOverlay(shape.overlay.id, shape.native);
+    // The model goes back to where it was. The entries are put back from
+    // the earliest index upwards, so each one lands in the place it used
+    // to hold even when several of them come back at once.
+    const restored = [...record.restored].sort((a, b) => a.index - b.index);
+
+    setMapOverlayArrayOnMap((current) => {
+        const next = current.filter((overlay) => !record.removedIds.includes(overlay.id));
+        restored.forEach((entry) => {
+            next.splice(Math.min(entry.index, next.length), 0, entry.overlay);
+        });
+        return next;
     });
 
-    // The ones that were in the native overlay list go back into it.
-    const nativeList = record.shapes
-        .filter((shape) => shape.wasInNativeList && shape.native)
-        .map((shape) => shape.native as NativeMapOverlay);
+    // The live objects that were taken off the map go back on it. The ones
+    // that were never taken off (a grouping leaves the map alone) are left
+    // exactly where they are.
+    const nativeList: NativeMapOverlay[] = [];
+
+    restored.forEach((entry) => {
+        if (!entry.native || !entry.wasDetached) {
+            return;
+        }
+        attachToMap(entry.native, map);
+        registerNativeOverlay(entry.overlay.id, entry.native);
+        if (entry.wasInNativeList) {
+            nativeList.push(entry.native);
+        }
+    });
 
     if (nativeList.length > 0) {
         setOverlayArrayOnMap((state) => [...state, ...nativeList]);
     }
 
-    // The model entries go back where they were. They are put back from the
-    // earliest index upwards, so each one lands in the place it used to
-    // hold even when several of them come back at once.
-    const restored = [...record.shapes].sort((a, b) => a.index - b.index);
+    // The shapes that came back are selected, so the visitor sees them. A
+    // group has no shape of its own on the map, so it is not selected.
+    setSelectedOverlayArray(
+        restored.filter((entry) => entry.native).map((entry) => entry.overlay)
+    );
 
-    setMapOverlayArrayOnMap((current) => {
-        const next = [...current];
-        restored.forEach((shape) => {
-            next.splice(Math.min(shape.index, next.length), 0, shape.overlay);
-        });
-        return next;
-    });
+    return { count: restored.length, action: record.action };
+};
 
-    // They come back selected, so the visitor sees what came back.
-    setSelectedOverlayArray(restored.map((shape) => shape.overlay));
+/**
+ * What the notice says after a change was taken back.
+ *
+ * The three actions are told apart, because "the shapes are back" means
+ * something different for a deletion than for a grouping.
+ */
+export const describeUndo = ({
+    count,
+    action,
+}: {
+    count: number;
+    action: UndoAction;
+}): string => {
+    if (action === "group") {
+        return `The ${count} shape${count === 1 ? " is" : "s are"} out of the group again.`;
+    }
 
-    return restored.length;
+    if (action === "ungroup") {
+        return "The group is together again.";
+    }
+
+    return `Put ${count} shape${count === 1 ? "" : "s"} back on the map.`;
 };
 
 /**
@@ -199,8 +238,10 @@ export const groupSelectedOverlays = (
     const {
         selectedOverlayArray,
         mapOverlayArrayOnMap,
+        nativeOverlayRegistry,
         setMapOverlayArrayOnMap,
         setSelectedOverlayArray,
+        pushUndoRecord,
     } = useOverlayStore.getState();
 
     const ids = selectedOverlayArray.map((overlay) => overlay.id);
@@ -219,11 +260,26 @@ export const groupSelectedOverlays = (
         children,
     };
 
+    // Remember where each shape used to sit, so the grouping can be taken
+    // apart again. The shapes stay on the map, so nothing is detached.
+    const restored: RestoredOverlay[] = children.map((child) => ({
+        overlay: child,
+        index: mapOverlayArrayOnMap.findIndex((overlay) => overlay.id === child.id),
+        native: nativeOverlayRegistry[child.id],
+        wasDetached: false,
+    }));
+
     setMapOverlayArrayOnMap([
         ...mapOverlayArrayOnMap.filter((overlay) => !ids.includes(overlay.id)),
         parent,
     ]);
     setSelectedOverlayArray([]);
+
+    pushUndoRecord({
+        action: "group",
+        restored,
+        removedIds: [parent.id],
+    });
 
     return parent;
 };
@@ -243,6 +299,7 @@ export const ungroupOverlays = (): number => {
         mapOverlayArrayOnMap,
         setMapOverlayArrayOnMap,
         setSelectedOverlayArray,
+        pushUndoRecord,
     } = useOverlayStore.getState();
 
     const groups = mapOverlayArrayOnMap.filter((overlay) => overlay.isParent && overlay.children);
@@ -264,6 +321,14 @@ export const ungroupOverlays = (): number => {
         ...rest.slice(index),
     ]);
     setSelectedOverlayArray([]);
+
+    // Remember the group, so it can be put back together again. The shapes
+    // stayed on the map all along, so nothing is detached.
+    pushUndoRecord({
+        action: "ungroup",
+        restored: [{ overlay: parent, index, wasDetached: false }],
+        removedIds: parent.children.map((child) => child.id),
+    });
 
     return parent.children.length;
 };
