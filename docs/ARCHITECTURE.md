@@ -1950,6 +1950,20 @@ has a max height, so a longer list scrolls instead of pushing the rest of
 the page down, and the scrollbar is the library's own rather than the
 browser's.
 
+**The flag labels carry the short code.** `CountryFlagSection` labels each
+flag with its code and the name it stands for — `CA - CANADA`, `CN -
+CHINA`, `USA - UNITED STATES`, `UK - UNITED KINGDOM` — because the code
+is the thing you look up and the name is the thing you read. The codes are
+the demo's own (`us` → `USA`, `gb` → `UK`), not the library's slugs; the
+library's own slugs are ISO 3166-1 alpha-2 codes, with `uk` kept as an
+alias for `gb`.
+
+The `CountryFlag` demo is the one place where a **registry key** is
+load-bearing: the library keyed the United Kingdom under `uk` while the
+demo asked for `gb`, so the chip rendered empty — an unknown slug draws
+nothing. Fixed in the library (`@whereq/react` 0.9.5), and an unknown
+slug now falls back to a neutral emblem, so a flag chip is never blank.
+
 ### `tag/`
 
 Stub. Same template as `category` and `paws`. **Bug**: in
