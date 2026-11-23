@@ -24,7 +24,7 @@
     "@types/react-modal": "^3.16.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vis.gl/react-google-maps": "^1.10.2",
-    "@whereq/react": "^0.9.5",
+    "@whereq/react": "^0.10.0",
     "ace-builds": "^1.45.2",
     "axios": "^1.21.1",
     "clsx": "^2.1.1",
