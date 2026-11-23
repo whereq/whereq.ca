@@ -7,15 +7,36 @@ import { CodeBlock } from "@/features/react/components/workspace/CodeBlock";
  * The flags on show. `code` is the short form — the one you would put in
  * a table — and `name` the country it stands for. The code is what the
  * demo shows; the name is what a hover gives you.
+ *
+ * The library's registry knows 65 countries; this is the row the demo puts
+ * on screen — the ones a reader is most likely to look for, and the ones
+ * that show the range of shapes the registry can draw: tricolors, cantons,
+ * a crescent, a chakra, a taegeuk, a serrated band.
  */
 const FLAGS = [
     { country: "ca", code: "CA", name: "Canada" },
     { country: "cn", code: "CN", name: "China" },
     { country: "us", code: "USA", name: "United States" },
     { country: "gb", code: "UK", name: "United Kingdom" },
-    { country: "ru", code: "RU", name: "Russia" },
     { country: "fr", code: "FR", name: "France" },
     { country: "de", code: "DE", name: "Germany" },
+    { country: "it", code: "IT", name: "Italy" },
+    { country: "es", code: "ES", name: "Spain" },
+    { country: "mx", code: "MX", name: "Mexico" },
+    { country: "br", code: "BR", name: "Brazil" },
+    { country: "jp", code: "JP", name: "Japan" },
+    { country: "kr", code: "KR", name: "South Korea" },
+    { country: "in", code: "IN", name: "India" },
+    { country: "pk", code: "PK", name: "Pakistan" },
+    { country: "sg", code: "SG", name: "Singapore" },
+    { country: "ru", code: "RU", name: "Russia" },
+    { country: "tr", code: "TR", name: "Turkey" },
+    { country: "eg", code: "EG", name: "Egypt" },
+    { country: "za", code: "ZA", name: "South Africa" },
+    { country: "au", code: "AU", name: "Australia" },
+    { country: "nl", code: "NL", name: "Netherlands" },
+    { country: "se", code: "SE", name: "Sweden" },
+    { country: "pl", code: "PL", name: "Poland" },
     { country: "eu", code: "EU", name: "Europe" },
 ];
 
@@ -50,8 +71,8 @@ export const CountryFlagSection = () => {
                 </div>
 
                 <p className="wq-react__note">
-                    Flags are inline SVG from a small built-in registry — no image
-                    request, no flag CDN, nothing to block on.
+                    Flags are inline SVG from a built-in registry of 65 countries —
+                    no image request, no flag CDN, nothing to block on.
                 </p>
             </div>
 

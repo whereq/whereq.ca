@@ -1950,19 +1950,31 @@ has a max height, so a longer list scrolls instead of pushing the rest of
 the page down, and the scrollbar is the library's own rather than the
 browser's.
 
-**The flag labels carry the short code.** `CountryFlagSection` labels each
-flag with its code and the name it stands for — `CA - CANADA`, `CN -
-CHINA`, `USA - UNITED STATES`, `UK - UNITED KINGDOM` — because the code
-is the thing you look up and the name is the thing you read. The codes are
-the demo's own (`us` → `USA`, `gb` → `UK`), not the library's slugs; the
-library's own slugs are ISO 3166-1 alpha-2 codes, with `uk` kept as an
-alias for `gb`.
+**The flag labels are the country code.** `CountryFlagSection` labels each
+flag with its short code alone — `CA`, `CN`, `USA`, `UK`, `FR`, `DE`, `IT`,
+`ES`, `MX`, `BR`, `JP`, `KR`, `IN`, `PK`, `SG`, `RU`, `TR`, `EG`, `ZA`,
+`AU`, `NL`, `SE`, `PL`, `EU` — because the code is the thing you look up,
+and a row of codes reads as a row of codes. The full name is a `title` on
+the flag, so a hover still gives you "United Kingdom". The codes are the
+demo's own (`us` → `USA`, `gb` → `UK`), not the library's slugs; the
+library's own slugs are
+ISO 3166-1 alpha-2 codes, with `uk` kept as an alias for `gb`.
 
 The `CountryFlag` demo is the one place where a **registry key** is
 load-bearing: the library keyed the United Kingdom under `uk` while the
 demo asked for `gb`, so the chip rendered empty — an unknown slug draws
 nothing. Fixed in the library (`@whereq/react` 0.9.5), and an unknown
 slug now falls back to a neutral emblem, so a flag chip is never blank.
+
+**The registry grew to 65 countries in `@whereq/react` 0.10.0.** The demo's
+row is 24 of them — the ones a reader is likely to look for, chosen so the
+row also shows the range of shapes the registry can draw: tricolors, a
+canton, a crescent, an Ashoka chakra, a taegeuk, a serrated band. The
+new flags were drawn against reference images in the library repo rather
+than from memory, because a flag drawn from memory is a flag that is
+subtly wrong: the crescent of Pakistan opens up and to the right, Qatar's
+white band is at the *hoist*, and Kuwait's black trapezoid has its base on
+the hoist edge.
 
 ### `tag/`
 
