@@ -38,7 +38,7 @@ export const SECTION_META: Record<SectionType, { title: string; blurb: string; i
     },
     [SectionType.COUNTRY_FLAG]: {
         title: "CountryFlag",
-        blurb: "Country flags drawn as inline SVG from a small built-in registry — no image requests, no flag CDN.",
+        blurb: "Country flags drawn as inline SVG from a built-in registry of 65 countries — no image requests, no flag CDN.",
         icon: faFlag,
     },
 };
